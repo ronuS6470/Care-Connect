@@ -1,4 +1,10 @@
+using CareConnect.AppServices.Assignments;
+using CareConnect.AppServices.CaregiverAvailability;
 using CareConnect.AppServices.Caregivers;
+using CareConnect.AppServices.CareTasks;
+using CareConnect.AppServices.Clients;
+using CareConnect.AppServices.Security;
+using CareConnect.AppServices.Visits;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CareConnect.AppServices.DependencyInjection;
@@ -8,7 +14,16 @@ public static class AppServicesServiceCollectionExtensions
 {
     public static IServiceCollection AddAppServices(this IServiceCollection services)
     {
-        services.AddScoped<ICaregiverActivationService, CaregiverActivationService>();
+        services.AddHttpContextAccessor();
+        services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
+
+        services.AddScoped<ICareTasksAppService, CareTasksAppService>();
+        services.AddScoped<ICaregiverAvailabilityAppService, CaregiverAvailabilityAppService>();
+        services.AddScoped<IClientsAppService, ClientsAppService>();
+        services.AddScoped<ICaregiversAppService, CaregiversAppService>();
+        services.AddScoped<IAssignmentsAppService, AssignmentsAppService>();
+        services.AddScoped<IVisitsAppService, VisitsAppService>();
+        services.AddScoped<IVisitNotesAppService, VisitNotesAppService>();
 
         return services;
     }

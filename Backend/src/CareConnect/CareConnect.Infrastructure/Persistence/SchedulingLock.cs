@@ -1,4 +1,4 @@
-using CareConnect.DTOs.Errors;
+using CareConnect.Infrastructure.Errors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 

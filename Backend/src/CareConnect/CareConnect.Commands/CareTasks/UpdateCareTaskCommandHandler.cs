@@ -1,40 +1,37 @@
-using CareConnect.DTOs.Errors;
-using CareConnect.Infrastructure.Persistence;
+using AutoMapper;
+using CareConnect.Infrastructure.Errors;
+using CareConnect.Infrastructure.Repositories.CareTasks;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace CareConnect.Commands.CareTasks;
 
 public sealed class UpdateCareTaskCommandHandler : IRequestHandler<UpdateCareTaskCommand>
 {
-    private readonly CareConnectDbContext _dbContext;
+    private readonly ICareTaskRepository _repository;
+    private readonly IMapper _mapper;
 
-    public UpdateCareTaskCommandHandler(CareConnectDbContext dbContext)
+    public UpdateCareTaskCommandHandler(ICareTaskRepository repository, IMapper mapper)
     {
-        _dbContext = dbContext;
+        _repository = repository;
+        _mapper = mapper;
     }
 
     public async Task Handle(UpdateCareTaskCommand request, CancellationToken cancellationToken)
     {
-        var careTask = await _dbContext.CareTasks
-            .FirstOrDefaultAsync(t => t.Id == request.CareTaskId, cancellationToken)
+        var careTask = await _repository.GetByIdAsync(request.CareTaskId, cancellationToken)
             ?? throw new NotFoundException($"Care task {request.CareTaskId} was not found.");
 
         var dto = request.CareTask;
 
-        var nameUsedByAnotherTask = await _dbContext.CareTasks
-            .AnyAsync(t => t.Id != request.CareTaskId && t.Name == dto.Name, cancellationToken);
+        var nameUsedByAnotherTask = await _repository.ExistsWithNameAsync(dto.Name, request.CareTaskId, cancellationToken);
 
         if (nameUsedByAnotherTask)
         {
             throw new BusinessRuleViolationException($"A care task named '{dto.Name}' already exists.");
         }
 
-        careTask.Name = dto.Name;
-        careTask.Description = dto.Description;
-        careTask.IsActive = dto.IsActive;
-        careTask.UpdatedAtUtc = DateTime.UtcNow;
+        _mapper.Map(dto, careTask);
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _repository.SaveChangesAsync(cancellationToken);
     }
 }

@@ -1,4 +1,4 @@
-namespace CareConnect.DTOs.Errors;
+namespace CareConnect.Infrastructure.Errors;
 
 /// <summary>A referenced resource doesn't exist. Maps to HTTP 404.</summary>
 public sealed class NotFoundException : Exception

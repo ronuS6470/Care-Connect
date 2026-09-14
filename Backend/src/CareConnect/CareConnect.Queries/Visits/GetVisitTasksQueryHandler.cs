@@ -1,41 +1,18 @@
 using CareConnect.DTOs.Visits;
-using CareConnect.Infrastructure.Data;
-using CareConnect.Queries.Security;
-using Dapper;
+using CareConnect.Queries.Visits.Repositories;
 using MediatR;
 
 namespace CareConnect.Queries.Visits;
 
 public sealed class GetVisitTasksQueryHandler : IRequestHandler<GetVisitTasksQuery, IReadOnlyList<VisitTaskDto>>
 {
-    private const string Sql = """
-        SELECT vt.Id, vt.VisitId, vt.CareTaskId, ct.Name AS CareTaskName,
-               vt.IsCompleted, vt.CompletedAtUtc, vt.Notes
-        FROM VisitTasks vt
-        INNER JOIN CareTasks ct ON ct.Id = vt.CareTaskId
-        WHERE vt.VisitId = @VisitId
-        ORDER BY vt.Id;
-        """;
+    private readonly IVisitReadRepository _repository;
 
-    private readonly IDbConnectionFactory _connectionFactory;
-
-    public GetVisitTasksQueryHandler(IDbConnectionFactory connectionFactory)
+    public GetVisitTasksQueryHandler(IVisitReadRepository repository)
     {
-        _connectionFactory = connectionFactory;
+        _repository = repository;
     }
 
-    public async Task<IReadOnlyList<VisitTaskDto>> Handle(GetVisitTasksQuery request, CancellationToken cancellationToken)
-    {
-        using var connection = _connectionFactory.CreateConnection();
-
-        var requester = await RequesterResolver.ResolveAsync(connection, request.RequestingAuth0UserId, cancellationToken);
-        await VisitAccessResolver.EnsureCanViewVisitAsync(connection, request.VisitId, requester, cancellationToken);
-
-        var tasks = await connection.QueryAsync<VisitTaskDto>(new CommandDefinition(
-            Sql,
-            new { request.VisitId },
-            cancellationToken: cancellationToken));
-
-        return tasks.ToList();
-    }
+    public Task<IReadOnlyList<VisitTaskDto>> Handle(GetVisitTasksQuery request, CancellationToken cancellationToken) =>
+        _repository.GetTasksAsync(request.VisitId, request.RequestingAuth0UserId, cancellationToken);
 }

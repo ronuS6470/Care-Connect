@@ -1,4 +1,4 @@
-namespace CareConnect.DTOs.Errors;
+namespace CareConnect.Infrastructure.Errors;
 
 /// <summary>
 /// The caller is authenticated but not allowed to access this specific resource (e.g. a Client

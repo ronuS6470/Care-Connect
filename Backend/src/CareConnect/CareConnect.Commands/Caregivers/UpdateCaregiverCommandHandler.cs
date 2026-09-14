@@ -1,34 +1,28 @@
-using CareConnect.DTOs.Errors;
-using CareConnect.Infrastructure.Persistence;
+using AutoMapper;
+using CareConnect.Infrastructure.Errors;
+using CareConnect.Infrastructure.Repositories.Caregivers;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace CareConnect.Commands.Caregivers;
 
 public sealed class UpdateCaregiverCommandHandler : IRequestHandler<UpdateCaregiverCommand>
 {
-    private readonly CareConnectDbContext _dbContext;
+    private readonly ICaregiverRepository _repository;
+    private readonly IMapper _mapper;
 
-    public UpdateCaregiverCommandHandler(CareConnectDbContext dbContext)
+    public UpdateCaregiverCommandHandler(ICaregiverRepository repository, IMapper mapper)
     {
-        _dbContext = dbContext;
+        _repository = repository;
+        _mapper = mapper;
     }
 
     public async Task Handle(UpdateCaregiverCommand request, CancellationToken cancellationToken)
     {
-        var caregiver = await _dbContext.Caregivers
-            .FirstOrDefaultAsync(c => c.Id == request.CaregiverId, cancellationToken)
+        var caregiver = await _repository.GetByIdAsync(request.CaregiverId, cancellationToken)
             ?? throw new NotFoundException($"Caregiver {request.CaregiverId} was not found.");
 
-        var dto = request.Caregiver;
+        _mapper.Map(request.Caregiver, caregiver);
 
-        caregiver.LicenseNumber = dto.LicenseNumber;
-        caregiver.HourlyRate = dto.HourlyRate;
-        caregiver.HireDate = dto.HireDate;
-        caregiver.YearsOfExperience = dto.YearsOfExperience;
-        caregiver.IsActive = dto.IsActive;
-        caregiver.UpdatedAtUtc = DateTime.UtcNow;
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _repository.SaveChangesAsync(cancellationToken);
     }
 }

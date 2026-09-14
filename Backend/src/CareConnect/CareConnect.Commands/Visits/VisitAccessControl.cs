@@ -1,8 +1,6 @@
 using CareConnect.DTOs.Enums;
-using CareConnect.DTOs.Errors;
 using CareConnect.Infrastructure.Entities;
-using CareConnect.Infrastructure.Persistence;
-using Microsoft.EntityFrameworkCore;
+using CareConnect.Infrastructure.Errors;
 
 namespace CareConnect.Commands.Visits;
 
@@ -13,30 +11,16 @@ namespace CareConnect.Commands.Visits;
 /// </summary>
 internal static class VisitAccessControl
 {
-    public static async Task EnsureCanManageVisitAsync(
-        CareConnectDbContext dbContext,
-        Visit visit,
-        string requestingAuth0UserId,
-        CancellationToken cancellationToken)
+    public static void EnsureCanManageVisit(User user, Caregiver? caregiver, Visit visit)
     {
-        var user = await dbContext.Users
-            .FirstOrDefaultAsync(u => u.Auth0UserId == requestingAuth0UserId, cancellationToken)
-            ?? throw new ForbiddenException("This account is not recognized.");
-
         if (user.Role == UserRole.Admin)
         {
             return;
         }
 
-        if (user.Role == UserRole.Caregiver)
+        if (user.Role == UserRole.Caregiver && caregiver is not null && caregiver.Id == visit.CaregiverAssignment.CaregiverId)
         {
-            var caregiver = await dbContext.Caregivers
-                .FirstOrDefaultAsync(c => c.UserId == user.Id, cancellationToken);
-
-            if (caregiver is not null && caregiver.Id == visit.CaregiverAssignment.CaregiverId)
-            {
-                return;
-            }
+            return;
         }
 
         throw new ForbiddenException("You do not have access to manage this visit.");

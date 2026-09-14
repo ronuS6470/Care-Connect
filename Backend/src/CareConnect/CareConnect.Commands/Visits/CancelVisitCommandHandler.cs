@@ -1,23 +1,22 @@
 using CareConnect.DTOs.Enums;
-using CareConnect.DTOs.Errors;
-using CareConnect.Infrastructure.Persistence;
+using CareConnect.Infrastructure.Errors;
+using CareConnect.Infrastructure.Repositories.Visits;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace CareConnect.Commands.Visits;
 
 public sealed class CancelVisitCommandHandler : IRequestHandler<CancelVisitCommand>
 {
-    private readonly CareConnectDbContext _dbContext;
+    private readonly IVisitRepository _repository;
 
-    public CancelVisitCommandHandler(CareConnectDbContext dbContext)
+    public CancelVisitCommandHandler(IVisitRepository repository)
     {
-        _dbContext = dbContext;
+        _repository = repository;
     }
 
     public async Task Handle(CancelVisitCommand request, CancellationToken cancellationToken)
     {
-        var visit = await _dbContext.Visits.FirstOrDefaultAsync(v => v.Id == request.VisitId, cancellationToken)
+        var visit = await _repository.GetByIdAsync(request.VisitId, cancellationToken)
             ?? throw new NotFoundException($"Visit {request.VisitId} was not found.");
 
         if (visit.Status is VisitStatus.Cancelled or VisitStatus.Completed)
@@ -29,6 +28,6 @@ public sealed class CancelVisitCommandHandler : IRequestHandler<CancelVisitComma
         visit.CancellationReason = request.Cancellation.CancellationReason;
         visit.UpdatedAtUtc = DateTime.UtcNow;
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _repository.SaveChangesAsync(cancellationToken);
     }
 }

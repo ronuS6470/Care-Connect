@@ -1,31 +1,29 @@
 using CareConnect.DTOs.Enums;
-using CareConnect.DTOs.Errors;
 using CareConnect.Infrastructure.Entities;
-using CareConnect.Infrastructure.Persistence;
+using CareConnect.Infrastructure.Errors;
+using CareConnect.Infrastructure.Repositories.Visits;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace CareConnect.Commands.Visits;
 
 public sealed class CompleteVisitCommandHandler : IRequestHandler<CompleteVisitCommand>
 {
-    private readonly CareConnectDbContext _dbContext;
+    private readonly IVisitRepository _repository;
 
-    public CompleteVisitCommandHandler(CareConnectDbContext dbContext)
+    public CompleteVisitCommandHandler(IVisitRepository repository)
     {
-        _dbContext = dbContext;
+        _repository = repository;
     }
 
     public async Task Handle(CompleteVisitCommand request, CancellationToken cancellationToken)
     {
-        var visit = await _dbContext.Visits
-            .Include(v => v.CaregiverAssignment)
-            .Include(v => v.VisitTasks)
-            .FirstOrDefaultAsync(v => v.Id == request.VisitId, cancellationToken)
+        var visit = await _repository.GetByIdWithTasksAsync(request.VisitId, cancellationToken)
             ?? throw new NotFoundException($"Visit {request.VisitId} was not found.");
 
-        var caregiver = await VisitOwnership.EnsureCallerOwnsVisitAsync(
-            _dbContext, visit, request.RequestingAuth0UserId, cancellationToken);
+        var caregiver = await _repository.GetCaregiverByAuth0UserIdAsync(request.RequestingAuth0UserId, cancellationToken)
+            ?? throw new ForbiddenException("This account is not recognized as a caregiver.");
+
+        VisitOwnership.EnsureCallerOwnsVisit(caregiver, visit);
 
         // Also blocks Scheduled -> Completed directly: a visit that was never checked in is still
         // Scheduled, so it fails this check before either of the two below is even reached.
@@ -55,7 +53,7 @@ public sealed class CompleteVisitCommandHandler : IRequestHandler<CompleteVisitC
                     $"{incompleteTasks.Count} visit task(s) are incomplete. Provide IncompleteTasksReason to complete anyway.");
             }
 
-            _dbContext.VisitNotes.Add(new VisitNote
+            _repository.AddVisitNote(new VisitNote
             {
                 VisitId = visit.Id,
                 AuthorUserId = caregiver.UserId,
@@ -66,6 +64,6 @@ public sealed class CompleteVisitCommandHandler : IRequestHandler<CompleteVisitC
         visit.Status = VisitStatus.Completed;
         visit.UpdatedAtUtc = DateTime.UtcNow;
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _repository.SaveChangesAsync(cancellationToken);
     }
 }

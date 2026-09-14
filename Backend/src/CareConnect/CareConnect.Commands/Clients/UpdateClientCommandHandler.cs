@@ -1,37 +1,28 @@
-using CareConnect.DTOs.Errors;
-using CareConnect.Infrastructure.Persistence;
+using AutoMapper;
+using CareConnect.Infrastructure.Errors;
+using CareConnect.Infrastructure.Repositories.Clients;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace CareConnect.Commands.Clients;
 
 public sealed class UpdateClientCommandHandler : IRequestHandler<UpdateClientCommand>
 {
-    private readonly CareConnectDbContext _dbContext;
+    private readonly IClientRepository _repository;
+    private readonly IMapper _mapper;
 
-    public UpdateClientCommandHandler(CareConnectDbContext dbContext)
+    public UpdateClientCommandHandler(IClientRepository repository, IMapper mapper)
     {
-        _dbContext = dbContext;
+        _repository = repository;
+        _mapper = mapper;
     }
 
     public async Task Handle(UpdateClientCommand request, CancellationToken cancellationToken)
     {
-        var client = await _dbContext.Clients
-            .FirstOrDefaultAsync(c => c.Id == request.ClientId, cancellationToken)
+        var client = await _repository.GetByIdAsync(request.ClientId, cancellationToken)
             ?? throw new NotFoundException($"Client {request.ClientId} was not found.");
 
-        var dto = request.Client;
+        _mapper.Map(request.Client, client);
 
-        client.AddressLine1 = dto.AddressLine1;
-        client.AddressLine2 = dto.AddressLine2;
-        client.City = dto.City;
-        client.State = dto.State;
-        client.PostalCode = dto.PostalCode;
-        client.EmergencyContactName = dto.EmergencyContactName;
-        client.EmergencyContactPhone = dto.EmergencyContactPhone;
-        client.IsActive = dto.IsActive;
-        client.UpdatedAtUtc = DateTime.UtcNow;
-
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _repository.SaveChangesAsync(cancellationToken);
     }
 }

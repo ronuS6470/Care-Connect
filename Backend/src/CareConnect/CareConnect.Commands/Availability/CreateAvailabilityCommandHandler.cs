@@ -1,31 +1,28 @@
-using CareConnect.DTOs.Errors;
+using AutoMapper;
 using CareConnect.Infrastructure.Entities;
-using CareConnect.Infrastructure.Persistence;
+using CareConnect.Infrastructure.Errors;
+using CareConnect.Infrastructure.Repositories.Availability;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace CareConnect.Commands.Availability;
 
 public sealed class CreateAvailabilityCommandHandler : IRequestHandler<CreateAvailabilityCommand, int>
 {
-    private readonly CareConnectDbContext _dbContext;
+    private readonly ICaregiverAvailabilityRepository _repository;
+    private readonly IMapper _mapper;
 
-    public CreateAvailabilityCommandHandler(CareConnectDbContext dbContext)
+    public CreateAvailabilityCommandHandler(ICaregiverAvailabilityRepository repository, IMapper mapper)
     {
-        _dbContext = dbContext;
+        _repository = repository;
+        _mapper = mapper;
     }
 
     public async Task<int> Handle(CreateAvailabilityCommand request, CancellationToken cancellationToken)
     {
         var dto = request.Availability;
 
-        var hasOverlap = await _dbContext.CaregiverAvailabilities.AnyAsync(a =>
-            a.CaregiverId == dto.CaregiverId &&
-            a.DayOfWeek == dto.DayOfWeek &&
-            a.IsActive &&
-            a.StartTime < dto.EndTime &&
-            a.EndTime > dto.StartTime,
-            cancellationToken);
+        var hasOverlap = await _repository.ExistsOverlappingWindowAsync(
+            dto.CaregiverId, dto.DayOfWeek, dto.StartTime, dto.EndTime, excludingId: null, cancellationToken);
 
         if (hasOverlap)
         {
@@ -33,17 +30,10 @@ public sealed class CreateAvailabilityCommandHandler : IRequestHandler<CreateAva
                 "This availability period overlaps with an existing one for that caregiver and day.");
         }
 
-        var availability = new CaregiverAvailability
-        {
-            CaregiverId = dto.CaregiverId,
-            DayOfWeek = dto.DayOfWeek,
-            StartTime = dto.StartTime,
-            EndTime = dto.EndTime,
-            IsActive = true,
-        };
+        var availability = _mapper.Map<CaregiverAvailability>(dto);
 
-        _dbContext.CaregiverAvailabilities.Add(availability);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        _repository.Add(availability);
+        await _repository.SaveChangesAsync(cancellationToken);
 
         return availability.Id;
     }

@@ -1,4 +1,4 @@
-namespace CareConnect.DTOs.Errors;
+namespace CareConnect.Infrastructure.Errors;
 
 /// <summary>
 /// The request is well-formed but conflicts with current server state (duplicate profile, wrong

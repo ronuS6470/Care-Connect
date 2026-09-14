@@ -1,6 +1,5 @@
 using CareConnect.DTOs.Caregivers;
-using CareConnect.Infrastructure.Data;
-using Dapper;
+using CareConnect.Queries.Availability.Repositories;
 using MediatR;
 
 namespace CareConnect.Queries.Availability;
@@ -8,31 +7,15 @@ namespace CareConnect.Queries.Availability;
 public sealed class GetCaregiverAvailabilityQueryHandler
     : IRequestHandler<GetCaregiverAvailabilityQuery, IReadOnlyList<CaregiverAvailabilityDto>>
 {
-    private const string Sql = """
-        SELECT Id, CaregiverId, DayOfWeek, StartTime, EndTime, IsActive
-        FROM CaregiverAvailabilities
-        WHERE CaregiverId = @CaregiverId
-        ORDER BY DayOfWeek, StartTime;
-        """;
+    private readonly ICaregiverAvailabilityReadRepository _repository;
 
-    private readonly IDbConnectionFactory _connectionFactory;
-
-    public GetCaregiverAvailabilityQueryHandler(IDbConnectionFactory connectionFactory)
+    public GetCaregiverAvailabilityQueryHandler(ICaregiverAvailabilityReadRepository repository)
     {
-        _connectionFactory = connectionFactory;
+        _repository = repository;
     }
 
-    public async Task<IReadOnlyList<CaregiverAvailabilityDto>> Handle(
+    public Task<IReadOnlyList<CaregiverAvailabilityDto>> Handle(
         GetCaregiverAvailabilityQuery request,
-        CancellationToken cancellationToken)
-    {
-        using var connection = _connectionFactory.CreateConnection();
-
-        var results = await connection.QueryAsync<CaregiverAvailabilityDto>(new CommandDefinition(
-            Sql,
-            new { request.CaregiverId },
-            cancellationToken: cancellationToken));
-
-        return results.ToList();
-    }
+        CancellationToken cancellationToken) =>
+        _repository.GetByCaregiverIdAsync(request.CaregiverId, cancellationToken);
 }

@@ -1,9 +1,7 @@
-using CareConnect.Commands.CareTasks;
+using CareConnect.AppServices.CareTasks;
 using CareConnect.DTOs.CareTasks;
 using CareConnect.DTOs.Common;
 using CareConnect.DTOs.Enums;
-using CareConnect.Queries.CareTasks;
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,11 +12,11 @@ namespace CareConnect.Controller.Controllers;
 [Authorize]
 public sealed class CareTasksController : ControllerBase
 {
-    private readonly IMediator _mediator;
+    private readonly ICareTasksAppService _careTasksAppService;
 
-    public CareTasksController(IMediator mediator)
+    public CareTasksController(ICareTasksAppService careTasksAppService)
     {
-        _mediator = mediator;
+        _careTasksAppService = careTasksAppService;
     }
 
     [HttpGet]
@@ -28,14 +26,14 @@ public sealed class CareTasksController : ControllerBase
         [FromQuery] bool? isActive = null,
         CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetCareTasksQuery(page, pageSize, isActive), cancellationToken);
+        var result = await _careTasksAppService.GetCareTasksAsync(page, pageSize, isActive, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<CareTaskDto>> GetCareTaskById(int id, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetCareTaskByIdQuery(id), cancellationToken);
+        var result = await _careTasksAppService.GetCareTaskByIdAsync(id, cancellationToken);
         return result is null ? NotFound() : Ok(result);
     }
 
@@ -45,7 +43,7 @@ public sealed class CareTasksController : ControllerBase
         [FromBody] CreateCareTaskDto dto,
         CancellationToken cancellationToken)
     {
-        var id = await _mediator.Send(new CreateCareTaskCommand(dto), cancellationToken);
+        var id = await _careTasksAppService.CreateCareTaskAsync(dto, cancellationToken);
         return CreatedAtAction(nameof(GetCareTaskById), new { id }, id);
     }
 
@@ -56,7 +54,7 @@ public sealed class CareTasksController : ControllerBase
         [FromBody] UpdateCareTaskDto dto,
         CancellationToken cancellationToken)
     {
-        await _mediator.Send(new UpdateCareTaskCommand(id, dto), cancellationToken);
+        await _careTasksAppService.UpdateCareTaskAsync(id, dto, cancellationToken);
         return NoContent();
     }
 
@@ -64,7 +62,7 @@ public sealed class CareTasksController : ControllerBase
     [Authorize(Roles = nameof(UserRole.Admin))]
     public async Task<IActionResult> DeleteCareTask(int id, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new DeleteCareTaskCommand(id), cancellationToken);
+        await _careTasksAppService.DeleteCareTaskAsync(id, cancellationToken);
         return NoContent();
     }
 }

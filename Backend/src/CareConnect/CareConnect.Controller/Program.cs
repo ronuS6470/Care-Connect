@@ -2,11 +2,9 @@ using CareConnect.AppServices.DependencyInjection;
 using CareConnect.Commands;
 using CareConnect.Commands.DependencyInjection;
 using CareConnect.Controller.Middleware;
-using CareConnect.DTOs.Common;
 using CareConnect.Infrastructure.DependencyInjection;
 using CareConnect.Queries;
 using CareConnect.Queries.DependencyInjection;
-using Microsoft.AspNetCore.Mvc;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,22 +25,10 @@ builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
-builder.Services
-    .AddControllers()
-    .ConfigureApiBehaviorOptions(options =>
-    {
-        // Keeps the shape of a "malformed request body" 400 identical to a FluentValidation 400
-        // (see GlobalExceptionHandler) instead of ASP.NET Core's default ValidationProblemDetails.
-        options.InvalidModelStateResponseFactory = context =>
-        {
-            var errors = context.ModelState
-                .Where(entry => entry.Value?.Errors.Count > 0)
-                .SelectMany(entry => entry.Value!.Errors.Select(error => $"{entry.Key}: {error.ErrorMessage}"))
-                .ToList();
-
-            return new BadRequestObjectResult(ApiResponse<object>.Fail("Validation failed.", errors));
-        };
-    });
+// [ApiController]'s built-in InvalidModelStateResponseFactory already returns a
+// ValidationProblemDetails for a malformed request body, matching the ProblemDetails shape
+// GlobalExceptionHandler now uses for FluentValidation failures — no override needed.
+builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();

@@ -1,11 +1,8 @@
-using CareConnect.Commands.Visits;
+using CareConnect.AppServices.Visits;
 using CareConnect.DTOs.Common;
 using CareConnect.DTOs.Enums;
-using CareConnect.DTOs.Errors;
 using CareConnect.DTOs.Reporting;
 using CareConnect.DTOs.Visits;
-using CareConnect.Queries.Visits;
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,18 +13,14 @@ namespace CareConnect.Controller.Controllers;
 [Authorize]
 public sealed class VisitsController : ControllerBase
 {
-    private readonly IMediator _mediator;
-
-    public VisitsController(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
-
     private const string AdminOrCaregiverRoles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Caregiver)}";
 
-    private string RequestingAuth0UserId =>
-        User.FindFirst("sub")?.Value
-            ?? throw new ForbiddenException("Token is missing a subject claim.");
+    private readonly IVisitsAppService _visitsAppService;
+
+    public VisitsController(IVisitsAppService visitsAppService)
+    {
+        _visitsAppService = visitsAppService;
+    }
 
     [HttpGet]
     public async Task<ActionResult<PagedResponseDto<VisitSummaryDto>>> GetVisits(
@@ -41,16 +34,15 @@ public sealed class VisitsController : ControllerBase
         [FromQuery] string? search = null,
         CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(
-            new GetVisitsQuery(page, pageSize, fromDate, toDate, caregiverId, clientId, status, search, RequestingAuth0UserId),
-            cancellationToken);
+        var result = await _visitsAppService.GetVisitsAsync(
+            page, pageSize, fromDate, toDate, caregiverId, clientId, status, search, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("today")]
     public async Task<ActionResult<IReadOnlyList<VisitSummaryDto>>> GetTodaysVisits(CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetTodaysVisitsQuery(RequestingAuth0UserId), cancellationToken);
+        var result = await _visitsAppService.GetTodaysVisitsAsync(cancellationToken);
         return Ok(result);
     }
 
@@ -60,14 +52,14 @@ public sealed class VisitsController : ControllerBase
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetUpcomingVisitsQuery(page, pageSize, RequestingAuth0UserId), cancellationToken);
+        var result = await _visitsAppService.GetUpcomingVisitsAsync(page, pageSize, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<VisitDto>> GetVisitById(int id, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetVisitByIdQuery(id, RequestingAuth0UserId), cancellationToken);
+        var result = await _visitsAppService.GetVisitByIdAsync(id, cancellationToken);
         return result is null ? NotFound() : Ok(result);
     }
 
@@ -75,7 +67,7 @@ public sealed class VisitsController : ControllerBase
     [Authorize(Roles = nameof(UserRole.Admin))]
     public async Task<ActionResult<int>> CreateVisit([FromBody] CreateVisitDto dto, CancellationToken cancellationToken)
     {
-        var id = await _mediator.Send(new CreateVisitCommand(dto), cancellationToken);
+        var id = await _visitsAppService.CreateVisitAsync(dto, cancellationToken);
         return CreatedAtAction(nameof(GetVisitById), new { id }, id);
     }
 
@@ -83,7 +75,7 @@ public sealed class VisitsController : ControllerBase
     [Authorize(Roles = nameof(UserRole.Admin))]
     public async Task<IActionResult> UpdateVisit(int id, [FromBody] UpdateVisitDto dto, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new UpdateVisitCommand(id, dto), cancellationToken);
+        await _visitsAppService.UpdateVisitAsync(id, dto, cancellationToken);
         return NoContent();
     }
 
@@ -91,7 +83,7 @@ public sealed class VisitsController : ControllerBase
     [Authorize(Roles = nameof(UserRole.Admin))]
     public async Task<IActionResult> CancelVisit(int id, [FromBody] CancelVisitDto dto, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new CancelVisitCommand(id, dto), cancellationToken);
+        await _visitsAppService.CancelVisitAsync(id, dto, cancellationToken);
         return NoContent();
     }
 
@@ -99,7 +91,7 @@ public sealed class VisitsController : ControllerBase
     [Authorize(Roles = nameof(UserRole.Caregiver))]
     public async Task<IActionResult> CheckIn(int id, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new CheckInVisitCommand(id, RequestingAuth0UserId), cancellationToken);
+        await _visitsAppService.CheckInAsync(id, cancellationToken);
         return NoContent();
     }
 
@@ -107,7 +99,7 @@ public sealed class VisitsController : ControllerBase
     [Authorize(Roles = nameof(UserRole.Caregiver))]
     public async Task<IActionResult> CheckOut(int id, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new CheckOutVisitCommand(id, RequestingAuth0UserId), cancellationToken);
+        await _visitsAppService.CheckOutAsync(id, cancellationToken);
         return NoContent();
     }
 
@@ -115,14 +107,14 @@ public sealed class VisitsController : ControllerBase
     [Authorize(Roles = nameof(UserRole.Caregiver))]
     public async Task<IActionResult> Complete(int id, [FromBody] CompleteVisitDto dto, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new CompleteVisitCommand(id, RequestingAuth0UserId, dto), cancellationToken);
+        await _visitsAppService.CompleteAsync(id, dto, cancellationToken);
         return NoContent();
     }
 
     [HttpGet("{visitId:int}/tasks")]
     public async Task<ActionResult<IReadOnlyList<VisitTaskDto>>> GetVisitTasks(int visitId, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetVisitTasksQuery(visitId, RequestingAuth0UserId), cancellationToken);
+        var result = await _visitsAppService.GetVisitTasksAsync(visitId, cancellationToken);
         return Ok(result);
     }
 
@@ -134,7 +126,7 @@ public sealed class VisitsController : ControllerBase
         [FromBody] UpdateVisitTaskDto dto,
         CancellationToken cancellationToken)
     {
-        await _mediator.Send(new UpdateVisitTaskCommand(visitId, taskId, dto, RequestingAuth0UserId), cancellationToken);
+        await _visitsAppService.UpdateVisitTaskAsync(visitId, taskId, dto, cancellationToken);
         return NoContent();
     }
 
@@ -142,7 +134,7 @@ public sealed class VisitsController : ControllerBase
     [Authorize(Roles = AdminOrCaregiverRoles)]
     public async Task<IActionResult> CompleteVisitTask(int visitId, int taskId, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new CompleteVisitTaskCommand(visitId, taskId, RequestingAuth0UserId), cancellationToken);
+        await _visitsAppService.CompleteVisitTaskAsync(visitId, taskId, cancellationToken);
         return NoContent();
     }
 
@@ -150,7 +142,7 @@ public sealed class VisitsController : ControllerBase
     [Authorize(Roles = AdminOrCaregiverRoles)]
     public async Task<IActionResult> UncompleteVisitTask(int visitId, int taskId, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new UncompleteVisitTaskCommand(visitId, taskId, RequestingAuth0UserId), cancellationToken);
+        await _visitsAppService.UncompleteVisitTaskAsync(visitId, taskId, cancellationToken);
         return NoContent();
     }
 }

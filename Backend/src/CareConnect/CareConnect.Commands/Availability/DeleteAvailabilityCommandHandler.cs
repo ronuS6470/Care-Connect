@@ -1,26 +1,24 @@
-using CareConnect.DTOs.Errors;
-using CareConnect.Infrastructure.Persistence;
+using CareConnect.Infrastructure.Errors;
+using CareConnect.Infrastructure.Repositories.Availability;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace CareConnect.Commands.Availability;
 
 public sealed class DeleteAvailabilityCommandHandler : IRequestHandler<DeleteAvailabilityCommand>
 {
-    private readonly CareConnectDbContext _dbContext;
+    private readonly ICaregiverAvailabilityRepository _repository;
 
-    public DeleteAvailabilityCommandHandler(CareConnectDbContext dbContext)
+    public DeleteAvailabilityCommandHandler(ICaregiverAvailabilityRepository repository)
     {
-        _dbContext = dbContext;
+        _repository = repository;
     }
 
     public async Task Handle(DeleteAvailabilityCommand request, CancellationToken cancellationToken)
     {
-        var availability = await _dbContext.CaregiverAvailabilities
-            .FirstOrDefaultAsync(a => a.Id == request.AvailabilityId, cancellationToken)
+        var availability = await _repository.GetByIdAsync(request.AvailabilityId, cancellationToken)
             ?? throw new NotFoundException($"Availability {request.AvailabilityId} was not found.");
 
-        _dbContext.CaregiverAvailabilities.Remove(availability);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        _repository.Remove(availability);
+        await _repository.SaveChangesAsync(cancellationToken);
     }
 }

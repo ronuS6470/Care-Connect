@@ -1,10 +1,7 @@
-using CareConnect.Commands.Assignments;
+using CareConnect.AppServices.Assignments;
 using CareConnect.DTOs.Assignments;
 using CareConnect.DTOs.Common;
 using CareConnect.DTOs.Enums;
-using CareConnect.DTOs.Errors;
-using CareConnect.Queries.Assignments;
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,16 +12,12 @@ namespace CareConnect.Controller.Controllers;
 [Authorize]
 public sealed class AssignmentsController : ControllerBase
 {
-    private readonly IMediator _mediator;
+    private readonly IAssignmentsAppService _assignmentsAppService;
 
-    public AssignmentsController(IMediator mediator)
+    public AssignmentsController(IAssignmentsAppService assignmentsAppService)
     {
-        _mediator = mediator;
+        _assignmentsAppService = assignmentsAppService;
     }
-
-    private string RequestingAuth0UserId =>
-        User.FindFirst("sub")?.Value
-            ?? throw new ForbiddenException("Token is missing a subject claim.");
 
     [HttpGet]
     public async Task<ActionResult<PagedResponseDto<AssignmentDto>>> GetAssignments(
@@ -33,16 +26,14 @@ public sealed class AssignmentsController : ControllerBase
         [FromQuery] AssignmentStatus? status = null,
         CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(
-            new GetAssignmentsQuery(page, pageSize, status, RequestingAuth0UserId),
-            cancellationToken);
+        var result = await _assignmentsAppService.GetAssignmentsAsync(page, pageSize, status, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<AssignmentDto>> GetAssignmentById(int id, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetAssignmentByIdQuery(id, RequestingAuth0UserId), cancellationToken);
+        var result = await _assignmentsAppService.GetAssignmentByIdAsync(id, cancellationToken);
         return result is null ? NotFound() : Ok(result);
     }
 
@@ -52,7 +43,7 @@ public sealed class AssignmentsController : ControllerBase
         [FromBody] CreateAssignmentDto dto,
         CancellationToken cancellationToken)
     {
-        var id = await _mediator.Send(new CreateAssignmentCommand(dto), cancellationToken);
+        var id = await _assignmentsAppService.CreateAssignmentAsync(dto, cancellationToken);
         return CreatedAtAction(nameof(GetAssignmentById), new { id }, id);
     }
 
@@ -63,7 +54,7 @@ public sealed class AssignmentsController : ControllerBase
         [FromBody] UpdateAssignmentDto dto,
         CancellationToken cancellationToken)
     {
-        await _mediator.Send(new UpdateAssignmentCommand(id, dto), cancellationToken);
+        await _assignmentsAppService.UpdateAssignmentAsync(id, dto, cancellationToken);
         return NoContent();
     }
 
@@ -71,7 +62,7 @@ public sealed class AssignmentsController : ControllerBase
     [Authorize(Roles = nameof(UserRole.Admin))]
     public async Task<IActionResult> CancelAssignment(int id, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new CancelAssignmentCommand(id), cancellationToken);
+        await _assignmentsAppService.CancelAssignmentAsync(id, cancellationToken);
         return NoContent();
     }
 }

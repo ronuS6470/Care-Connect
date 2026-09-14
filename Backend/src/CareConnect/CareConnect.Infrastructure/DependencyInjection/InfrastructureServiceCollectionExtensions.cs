@@ -2,6 +2,12 @@ using CareConnect.Infrastructure.Auth;
 using CareConnect.Infrastructure.Data;
 using CareConnect.Infrastructure.HealthChecks;
 using CareConnect.Infrastructure.Persistence;
+using CareConnect.Infrastructure.Repositories.Assignments;
+using CareConnect.Infrastructure.Repositories.Availability;
+using CareConnect.Infrastructure.Repositories.Caregivers;
+using CareConnect.Infrastructure.Repositories.CareTasks;
+using CareConnect.Infrastructure.Repositories.Clients;
+using CareConnect.Infrastructure.Repositories.Visits;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -38,8 +44,8 @@ public static class InfrastructureServiceCollectionExtensions
 
         // Single connection string, shared by both EF Core (writes) and Dapper (reads) so the two
         // never drift onto different databases.
-        var connectionString = configuration.GetConnectionString("CareConnectDatabase")
-            ?? throw new InvalidOperationException("Missing 'CareConnectDatabase' connection string.");
+        var connectionString = configuration.GetConnectionString("DefaultConnection")
+            ?? throw new InvalidOperationException("Missing 'DefaultConnection' connection string.");
 
         services.AddDbContext<CareConnectDbContext>(options =>
         {
@@ -60,6 +66,13 @@ public static class InfrastructureServiceCollectionExtensions
         });
 
         services.AddSingleton<IDbConnectionFactory>(_ => new SqlConnectionFactory(connectionString));
+
+        services.AddScoped<ICareTaskRepository, CareTaskRepository>();
+        services.AddScoped<ICaregiverAvailabilityRepository, CaregiverAvailabilityRepository>();
+        services.AddScoped<IClientRepository, ClientRepository>();
+        services.AddScoped<ICaregiverRepository, CaregiverRepository>();
+        services.AddScoped<IAssignmentRepository, AssignmentRepository>();
+        services.AddScoped<IVisitRepository, VisitRepository>();
 
         services
             .AddHealthChecks()

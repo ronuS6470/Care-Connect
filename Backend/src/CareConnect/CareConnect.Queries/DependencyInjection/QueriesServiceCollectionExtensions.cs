@@ -1,3 +1,9 @@
+using CareConnect.Queries.Assignments.Repositories;
+using CareConnect.Queries.Availability.Repositories;
+using CareConnect.Queries.Caregivers.Repositories;
+using CareConnect.Queries.CareTasks.Repositories;
+using CareConnect.Queries.Clients.Repositories;
+using CareConnect.Queries.Visits.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CareConnect.Queries.DependencyInjection;
@@ -8,7 +14,13 @@ public static class QueriesServiceCollectionExtensions
     public static IServiceCollection AddQueries(this IServiceCollection services)
     {
         // Query handlers are discovered by MediatR's assembly scan (see Program.cs).
-        // Read-side-specific registrations (e.g. Dapper type handlers) land here as they're introduced.
+        services.AddScoped<ICareTaskReadRepository, CareTaskDapperRepository>();
+        services.AddScoped<ICaregiverAvailabilityReadRepository, CaregiverAvailabilityDapperRepository>();
+        services.AddScoped<IClientReadRepository, ClientDapperRepository>();
+        services.AddScoped<ICaregiverReadRepository, CaregiverDapperRepository>();
+        services.AddScoped<IAssignmentReadRepository, AssignmentDapperRepository>();
+        services.AddScoped<IVisitReadRepository, VisitDapperRepository>();
+
         return services;
     }
 }

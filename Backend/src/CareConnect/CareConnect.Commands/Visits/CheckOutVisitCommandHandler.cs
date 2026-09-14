@@ -1,28 +1,28 @@
 using CareConnect.DTOs.Enums;
-using CareConnect.DTOs.Errors;
-using CareConnect.Infrastructure.Persistence;
+using CareConnect.Infrastructure.Errors;
+using CareConnect.Infrastructure.Repositories.Visits;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace CareConnect.Commands.Visits;
 
 public sealed class CheckOutVisitCommandHandler : IRequestHandler<CheckOutVisitCommand>
 {
-    private readonly CareConnectDbContext _dbContext;
+    private readonly IVisitRepository _repository;
 
-    public CheckOutVisitCommandHandler(CareConnectDbContext dbContext)
+    public CheckOutVisitCommandHandler(IVisitRepository repository)
     {
-        _dbContext = dbContext;
+        _repository = repository;
     }
 
     public async Task Handle(CheckOutVisitCommand request, CancellationToken cancellationToken)
     {
-        var visit = await _dbContext.Visits
-            .Include(v => v.CaregiverAssignment)
-            .FirstOrDefaultAsync(v => v.Id == request.VisitId, cancellationToken)
+        var visit = await _repository.GetByIdAsync(request.VisitId, cancellationToken)
             ?? throw new NotFoundException($"Visit {request.VisitId} was not found.");
 
-        await VisitOwnership.EnsureCallerOwnsVisitAsync(_dbContext, visit, request.RequestingAuth0UserId, cancellationToken);
+        var caregiver = await _repository.GetCaregiverByAuth0UserIdAsync(request.RequestingAuth0UserId, cancellationToken)
+            ?? throw new ForbiddenException("This account is not recognized as a caregiver.");
+
+        VisitOwnership.EnsureCallerOwnsVisit(caregiver, visit);
 
         if (visit.Status != VisitStatus.InProgress)
         {
@@ -50,6 +50,6 @@ public sealed class CheckOutVisitCommandHandler : IRequestHandler<CheckOutVisitC
         visit.ActualEndUtc = now;
         visit.UpdatedAtUtc = now;
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _repository.SaveChangesAsync(cancellationToken);
     }
 }
