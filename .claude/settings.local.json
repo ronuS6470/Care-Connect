@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -Command \"Get-ChildItem 'c:\\\\1rivet\\\\New folder'\")",
+      "Bash(dotnet --version)",
+      "Bash(dotnet --list-sdks)",
+      "Bash(powershell -Command \"Get-NetTCPConnection -LocalPort 5035 -ErrorAction SilentlyContinue | Select-Object -Property OwningProcess\")",
+      "Bash(powershell -Command \"Get-Process -Name dotnet -ErrorAction SilentlyContinue | Select-Object Id,StartTime\")"
+    ]
+  }
+}

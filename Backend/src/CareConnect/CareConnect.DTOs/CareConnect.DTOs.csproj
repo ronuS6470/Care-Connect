@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- CA1000: ApiResponse<T>.SuccessResponse/Fail are intentional — T is always inferable from the call site. -->
+    <NoWarn>$(NoWarn);CA1000</NoWarn>
+  </PropertyGroup>
+
+</Project>
