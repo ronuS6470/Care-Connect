@@ -7,13 +7,12 @@ import ErrorState from '@/components/common/ErrorState.vue'
 import LoadingState from '@/components/common/LoadingState.vue'
 import PageHeader from '@/components/common/PageHeader.vue'
 import StatusBadge from '@/components/common/StatusBadge.vue'
-import { useAsyncData } from '@/composables/useAsyncData'
-import { getCaregiverDashboard } from '@/services/dashboard.service'
+import { useCaregiverDashboard } from '@/composables/useDashboard'
 import { formatCurrency } from '@/utils/currency'
 import { formatDateTime } from '@/utils/date'
 import { visitStatusLabel, visitStatusTone } from '@/utils/status'
 
-const { data, loading, error, load } = useAsyncData(getCaregiverDashboard)
+const { data, loading, error, load } = useCaregiverDashboard()
 
 onMounted(load)
 </script>
@@ -53,12 +52,17 @@ onMounted(load)
       <div class="mt-6 grid gap-4 lg:grid-cols-2">
         <AppCard title="Today's Visits">
           <ul v-if="data.todaysVisits.length" class="divide-y divide-border -mx-5 -my-5">
-            <li v-for="visit in data.todaysVisits" :key="visit.visitId" class="flex items-center justify-between gap-3 px-5 py-3">
-              <div class="min-w-0">
-                <p class="truncate text-sm font-medium text-ink">{{ visit.clientFullName }}</p>
-                <p class="text-xs text-ink-muted">{{ formatDateTime(visit.scheduledStartUtc) }}</p>
-              </div>
-              <StatusBadge :label="visitStatusLabel(visit.status)" :tone="visitStatusTone(visit.status)" />
+            <li v-for="visit in data.todaysVisits" :key="visit.visitId">
+              <RouterLink
+                :to="`/caregiver/visits/${visit.visitId}`"
+                class="flex items-center justify-between gap-3 px-5 py-3 hover:bg-surface-sunken"
+              >
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-medium text-ink">{{ visit.clientFullName }}</p>
+                  <p class="text-xs text-ink-muted">{{ formatDateTime(visit.scheduledStartUtc) }}</p>
+                </div>
+                <StatusBadge :label="visitStatusLabel(visit.status)" :tone="visitStatusTone(visit.status)" />
+              </RouterLink>
             </li>
           </ul>
           <EmptyState v-else title="No visits today" />
@@ -66,12 +70,17 @@ onMounted(load)
 
         <AppCard title="Upcoming Visits">
           <ul v-if="data.upcomingVisits.length" class="divide-y divide-border -mx-5 -my-5">
-            <li v-for="visit in data.upcomingVisits" :key="visit.visitId" class="flex items-center justify-between gap-3 px-5 py-3">
-              <div class="min-w-0">
-                <p class="truncate text-sm font-medium text-ink">{{ visit.clientFullName }}</p>
-                <p class="text-xs text-ink-muted">{{ formatDateTime(visit.scheduledStartUtc) }}</p>
-              </div>
-              <StatusBadge :label="visitStatusLabel(visit.status)" :tone="visitStatusTone(visit.status)" />
+            <li v-for="visit in data.upcomingVisits" :key="visit.visitId">
+              <RouterLink
+                :to="`/caregiver/visits/${visit.visitId}`"
+                class="flex items-center justify-between gap-3 px-5 py-3 hover:bg-surface-sunken"
+              >
+                <div class="min-w-0">
+                  <p class="truncate text-sm font-medium text-ink">{{ visit.clientFullName }}</p>
+                  <p class="text-xs text-ink-muted">{{ formatDateTime(visit.scheduledStartUtc) }}</p>
+                </div>
+                <StatusBadge :label="visitStatusLabel(visit.status)" :tone="visitStatusTone(visit.status)" />
+              </RouterLink>
             </li>
           </ul>
           <EmptyState v-else title="No upcoming visits" />

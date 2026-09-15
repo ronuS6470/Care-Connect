@@ -49,13 +49,13 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'caregivers',
         name: 'admin-caregivers',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/admin/caregivers/CaregiversListPage.vue'),
         meta: { title: 'Caregivers', breadcrumb: [{ label: 'Caregivers' }] },
       },
       {
         path: 'caregivers/new',
         name: 'admin-caregivers-new',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/admin/caregivers/CaregiverNewPage.vue'),
         meta: {
           title: 'New Caregiver',
           breadcrumb: [{ label: 'Caregivers', to: '/admin/caregivers' }, { label: 'New' }],
@@ -64,7 +64,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'caregivers/:id',
         name: 'admin-caregiver-details',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/admin/caregivers/CaregiverDetailPage.vue'),
         meta: {
           title: 'Caregiver Details',
           breadcrumb: [{ label: 'Caregivers', to: '/admin/caregivers' }, { label: 'Details' }],
@@ -73,7 +73,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'caregivers/:id/edit',
         name: 'admin-caregiver-edit',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/admin/caregivers/CaregiverEditPage.vue'),
         meta: {
           title: 'Edit Caregiver',
           breadcrumb: [{ label: 'Caregivers', to: '/admin/caregivers' }, { label: 'Edit' }],
@@ -82,13 +82,13 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'clients',
         name: 'admin-clients',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/admin/clients/ClientsListPage.vue'),
         meta: { title: 'Clients', breadcrumb: [{ label: 'Clients' }] },
       },
       {
         path: 'clients/new',
         name: 'admin-clients-new',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/admin/clients/ClientNewPage.vue'),
         meta: {
           title: 'New Client',
           breadcrumb: [{ label: 'Clients', to: '/admin/clients' }, { label: 'New' }],
@@ -97,7 +97,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'clients/:id',
         name: 'admin-client-details',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/admin/clients/ClientDetailPage.vue'),
         meta: {
           title: 'Client Details',
           breadcrumb: [{ label: 'Clients', to: '/admin/clients' }, { label: 'Details' }],
@@ -106,7 +106,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'clients/:id/edit',
         name: 'admin-client-edit',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/admin/clients/ClientEditPage.vue'),
         meta: {
           title: 'Edit Client',
           breadcrumb: [{ label: 'Clients', to: '/admin/clients' }, { label: 'Edit' }],
@@ -115,19 +115,19 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'assignments',
         name: 'admin-assignments',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/admin/assignments/AssignmentsPage.vue'),
         meta: { title: 'Assignments', breadcrumb: [{ label: 'Assignments' }] },
       },
       {
         path: 'visits',
         name: 'admin-visits',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/admin/visits/VisitsListPage.vue'),
         meta: { title: 'Visits', breadcrumb: [{ label: 'Visits' }] },
       },
       {
         path: 'visits/new',
         name: 'admin-visits-new',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/admin/visits/VisitCreatePage.vue'),
         meta: {
           title: 'New Visit',
           breadcrumb: [{ label: 'Visits', to: '/admin/visits' }, { label: 'New' }],
@@ -136,7 +136,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'visits/:id',
         name: 'admin-visit-details',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/admin/visits/VisitDetailPage.vue'),
         meta: {
           title: 'Visit Details',
           breadcrumb: [{ label: 'Visits', to: '/admin/visits' }, { label: 'Details' }],
@@ -145,7 +145,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'care-tasks',
         name: 'admin-care-tasks',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/admin/careTasks/CareTasksPage.vue'),
         meta: { title: 'Care Tasks', breadcrumb: [{ label: 'Care Tasks' }] },
       },
       {
@@ -193,19 +193,19 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'visits/:id',
         name: 'caregiver-visit-details',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/caregiver/visits/VisitDetailPage.vue'),
         meta: { title: 'Visit Details', breadcrumb: [{ label: 'Visits' }, { label: 'Details' }] },
       },
       {
         path: 'availability',
         name: 'caregiver-availability',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/caregiver/AvailabilityPage.vue'),
         meta: { title: 'Availability', breadcrumb: [{ label: 'Availability' }] },
       },
       {
         path: 'earnings',
         name: 'caregiver-earnings',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/caregiver/EarningsPage.vue'),
         meta: { title: 'Earnings', breadcrumb: [{ label: 'Earnings' }] },
       },
     ],
@@ -229,34 +229,28 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'caregiver',
         name: 'client-caregiver',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/client/CaregiverPage.vue'),
         meta: { title: 'My Caregiver', breadcrumb: [{ label: 'My Caregiver' }] },
       },
       {
-        path: 'visits/upcoming',
-        name: 'client-visits-upcoming',
-        component: () => import('@/pages/ComingSoonPage.vue'),
-        meta: { title: 'Upcoming Visits', breadcrumb: [{ label: 'Visits' }, { label: 'Upcoming' }] },
-      },
-      {
-        path: 'visits/history',
-        name: 'client-visits-history',
-        component: () => import('@/pages/ComingSoonPage.vue'),
-        meta: { title: 'Visit History', breadcrumb: [{ label: 'Visits' }, { label: 'History' }] },
+        path: 'visits',
+        name: 'client-visits',
+        component: () => import('@/pages/client/visits/VisitsListPage.vue'),
+        meta: { title: 'My Visits', breadcrumb: [{ label: 'Visits' }] },
       },
       {
         path: 'visits/:id',
         name: 'client-visit-details',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/client/visits/VisitDetailPage.vue'),
         meta: {
           title: 'Visit Details',
-          breadcrumb: [{ label: 'Visits', to: '/client/visits/upcoming' }, { label: 'Details' }],
+          breadcrumb: [{ label: 'Visits', to: '/client/visits' }, { label: 'Details' }],
         },
       },
       {
         path: 'profile',
         name: 'client-profile',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/client/ProfilePage.vue'),
         meta: { title: 'Profile', breadcrumb: [{ label: 'Profile' }] },
       },
     ],

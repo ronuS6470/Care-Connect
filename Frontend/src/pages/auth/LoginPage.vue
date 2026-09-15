@@ -5,7 +5,7 @@ import { useRoute, useRouter } from 'vue-router'
 import AppAlert from '@/components/common/AppAlert.vue'
 import AppButton from '@/components/common/AppButton.vue'
 import AppInput from '@/components/common/AppInput.vue'
-import { ApiError } from '@/services/http'
+import { useApiError } from '@/composables/useApiError'
 import { useAuthStore } from '@/stores/auth'
 import { ROLE_HOME_PATH } from '@/types/enums'
 import { email as emailRule, required, runRules } from '@/validation/rules'
@@ -13,6 +13,7 @@ import { email as emailRule, required, runRules } from '@/validation/rules'
 const auth = useAuthStore()
 const router = useRouter()
 const route = useRoute()
+const { getMessage } = useApiError()
 
 const form = reactive({ email: '', password: '' })
 const fieldErrors = reactive<{ email: string | null; password: string | null }>({ email: null, password: null })
@@ -44,7 +45,7 @@ async function handleSubmit() {
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : ROLE_HOME_PATH[response.role]
     router.push(redirect)
   } catch (err) {
-    apiError.value = err instanceof ApiError ? err.message : 'Unable to sign in. Please try again.'
+    apiError.value = getMessage(err, 'Unable to sign in. Please try again.')
   } finally {
     submitting.value = false
   }

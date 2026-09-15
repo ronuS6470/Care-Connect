@@ -24,6 +24,7 @@ export interface CreateAssignmentPayload {
 
 /** Mirrors CareConnect.DTOs.Assignments.UpdateAssignmentDto. */
 export interface UpdateAssignmentPayload {
+  status: AssignmentStatus
   endDate?: string | null
   notes?: string | null
 }

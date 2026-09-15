@@ -53,3 +53,14 @@ export interface CreateVisitPayload {
   scheduledEndUtc: string
   careTaskIds: number[]
 }
+
+/** Mirrors CareConnect.DTOs.Visits.CreateVisitNoteDto. */
+export interface CreateVisitNotePayload {
+  visitId: number
+  content: string
+}
+
+/** Mirrors CareConnect.DTOs.Visits.UpdateVisitTaskDto. */
+export interface UpdateVisitTaskPayload {
+  notes: string | null
+}

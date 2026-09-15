@@ -36,4 +36,5 @@ export interface UpdateClientPayload {
   postalCode: string
   emergencyContactName?: string | null
   emergencyContactPhone?: string | null
+  isActive: boolean
 }

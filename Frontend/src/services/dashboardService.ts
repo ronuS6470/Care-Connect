@@ -1,4 +1,4 @@
-import { http } from './http'
+import { http } from './api'
 import type { AdminDashboard, CaregiverDashboard, ClientDashboard } from '@/types/dashboard'
 
 export async function getAdminDashboard(): Promise<AdminDashboard> {
@@ -14,4 +14,10 @@ export async function getCaregiverDashboard(): Promise<CaregiverDashboard> {
 export async function getClientDashboard(): Promise<ClientDashboard> {
   const { data } = await http.get<ClientDashboard>('/dashboard/client')
   return data
+}
+
+export const dashboardService = {
+  getAdmin: getAdminDashboard,
+  getCaregiver: getCaregiverDashboard,
+  getClient: getClientDashboard,
 }

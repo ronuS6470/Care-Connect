@@ -6,7 +6,7 @@ declare module 'vue-router' {
     requiresAuth?: boolean
     guestOnly?: boolean
     roles?: UserRole[]
-    /** Page title, shown by ComingSoonPage and available for <title>/analytics later. */
+    /** Page title, used for document.title and breadcrumb/header display. */
     title?: string
     /** Full trail for AppHeader's Breadcrumb; last entry is the current page (no `to`). */
     breadcrumb?: BreadcrumbItem[]

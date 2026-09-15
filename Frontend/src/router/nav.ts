@@ -22,7 +22,6 @@ export const CAREGIVER_NAV: NavLink[] = [
 export const CLIENT_NAV: NavLink[] = [
   { label: 'Dashboard', to: '/client/dashboard', icon: 'dashboard' },
   { label: 'My Caregiver', to: '/client/caregiver', icon: 'caregivers' },
-  { label: 'Upcoming Visits', to: '/client/visits/upcoming', icon: 'visits' },
-  { label: 'Visit History', to: '/client/visits/history', icon: 'reports' },
+  { label: 'My Visits', to: '/client/visits', icon: 'visits' },
   { label: 'Profile', to: '/client/profile', icon: 'profile' },
 ]

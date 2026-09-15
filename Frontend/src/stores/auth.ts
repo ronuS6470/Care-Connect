@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 
 import router from '@/router'
-import * as authService from '@/services/auth.service'
+import * as authService from '@/services/authService'
 import type { AuthResponse, LoginRequest, RegisterRequest } from '@/types/auth'
 import type { UserRole } from '@/types/enums'
 

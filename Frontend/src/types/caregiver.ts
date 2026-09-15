@@ -27,13 +27,35 @@ export interface CreateCaregiverPayload {
 export interface UpdateCaregiverPayload {
   licenseNumber?: string | null
   hourlyRate: number
+  hireDate: string
   yearsOfExperience: number
+  isActive: boolean
 }
 
-/** Mirrors CareConnect.DTOs.Caregivers.CaregiverAvailabilityDto. */
+/**
+ * Mirrors CareConnect.DTOs.Caregivers.CaregiverAvailabilityDto. dayOfWeek is .NET's DayOfWeek
+ * enum (Sunday=0..Saturday=6, NOT ISO's Monday=0) — see DAY_OF_WEEK_OPTIONS in utils/date.ts.
+ * startTime/endTime are TimeOnly, serialized as "HH:mm:ss".
+ */
 export interface CaregiverAvailability {
   id: number
   caregiverId: number
+  dayOfWeek: number
+  startTime: string
+  endTime: string
+  isActive: boolean
+}
+
+/** Mirrors CareConnect.DTOs.Caregivers.CreateCaregiverAvailabilityDto. */
+export interface CreateCaregiverAvailabilityPayload {
+  caregiverId: number
+  dayOfWeek: number
+  startTime: string
+  endTime: string
+}
+
+/** Mirrors CareConnect.DTOs.Caregivers.UpdateCaregiverAvailabilityDto. */
+export interface UpdateCaregiverAvailabilityPayload {
   dayOfWeek: number
   startTime: string
   endTime: string

@@ -1,4 +1,4 @@
-<script setup lang="ts" generic="T extends Record<string, unknown>">
+<script setup lang="ts" generic="T extends object">
 import LoadingState from './LoadingState.vue'
 import EmptyState from './EmptyState.vue'
 
@@ -28,7 +28,7 @@ withDefaults(
 )
 
 function cellValue(column: DataTableColumn<T>, row: T): unknown {
-  return column.value ? column.value(row) : row[column.key]
+  return column.value ? column.value(row) : (row as Record<string, unknown>)[column.key]
 }
 
 const alignClass: Record<NonNullable<DataTableColumn<T>['align']>, string> = {

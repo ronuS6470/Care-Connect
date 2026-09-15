@@ -1,9 +1,10 @@
 /** Mirrors CareConnect.DTOs.Reporting.CaregiverEarningsVisitDto. */
 export interface CaregiverEarningsVisit {
   visitId: number
-  actualStartUtc: string
-  actualEndUtc: string
-  hoursWorked: number
+  clientFullName: string
+  checkInUtc: string
+  checkOutUtc: string
+  workedHours: number
   earnings: number
 }
 

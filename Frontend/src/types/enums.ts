@@ -28,6 +28,18 @@ export enum AssignmentStatus {
   Cancelled = 3,
 }
 
+/**
+ * Mirrors CareConnect.DTOs.Enums.InvoiceStatus. There is no InvoiceDto, controller, or
+ * AppService anywhere in the backend — only the Invoice entity/enum exist at the data layer, with
+ * no HTTP surface — so this (and types/invoice.ts) model the shape for when that lands, but no
+ * invoiceService exists to call yet.
+ */
+export enum InvoiceStatus {
+  Pending = 1,
+  Paid = 2,
+  Cancelled = 3,
+}
+
 export const USER_ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.Admin]: 'Admin',
   [UserRole.Caregiver]: 'Caregiver',

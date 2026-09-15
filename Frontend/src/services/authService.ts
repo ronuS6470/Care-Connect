@@ -1,4 +1,4 @@
-import { http } from './http'
+import { http } from './api'
 import type { AuthResponse, LoginRequest, RegisterRequest } from '@/types/auth'
 
 /**
@@ -22,3 +22,5 @@ export async function logout(): Promise<void> {
   // The API issues stateless JWTs with no server-side session to revoke, so there's nothing to
   // call — clearing local state (done by the auth store) is the entire logout operation.
 }
+
+export const authService = { login, register, logout }
