@@ -1,25 +1,20 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
 
 import AppAlert from '@/components/common/AppAlert.vue'
 import AppButton from '@/components/common/AppButton.vue'
 import AppInput from '@/components/common/AppInput.vue'
 import { useApiError } from '@/composables/useApiError'
 import { useAuthStore } from '@/stores/auth'
-import { ROLE_HOME_PATH } from '@/types/enums'
 import { email as emailRule, required, runRules } from '@/validation/rules'
 
 const auth = useAuthStore()
-const router = useRouter()
-const route = useRoute()
 const { getMessage } = useApiError()
 
 const form = reactive({ email: '', password: '' })
 const fieldErrors = reactive<{ email: string | null; password: string | null }>({ email: null, password: null })
 
 const showPassword = ref(false)
-const submitting = ref(false)
 const apiError = ref<string | null>(null)
 
 function validateEmail() {
@@ -39,15 +34,12 @@ async function handleSubmit() {
   const passwordValid = validatePassword()
   if (!emailValid || !passwordValid) return
 
-  submitting.value = true
   try {
-    const response = await auth.login({ email: form.email, password: form.password })
-    const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : ROLE_HOME_PATH[response.role]
-    router.push(redirect)
+    // auth.login() handles the post-success redirect itself (intended route, else role home) —
+    // this page only needs to report a failure.
+    await auth.login({ email: form.email, password: form.password })
   } catch (err) {
     apiError.value = getMessage(err, 'Unable to sign in. Please try again.')
-  } finally {
-    submitting.value = false
   }
 }
 </script>
@@ -114,7 +106,7 @@ async function handleSubmit() {
           </template>
         </AppInput>
 
-        <AppButton type="submit" block :loading="submitting">Sign in</AppButton>
+        <AppButton type="submit" block :loading="auth.loading">Sign in</AppButton>
       </form>
     </div>
   </div>

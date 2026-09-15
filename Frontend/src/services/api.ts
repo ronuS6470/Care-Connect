@@ -1,11 +1,13 @@
 import axios, { AxiosError } from 'axios'
 
+import router from '@/router'
 import { useAuthStore } from '@/stores/auth'
 import type { ApiResponse } from '@/types/common'
 
 /**
- * The centralized Axios instance — every service in this folder imports `http` from here rather
- * than calling `axios` directly, so baseURL, auth, and error handling exist in exactly one place.
+ * The one centralized Axios instance — every service in this folder imports `http` from here
+ * rather than calling `axios` directly, so baseURL, auth, and error handling exist in exactly one
+ * place. No service ever sets its own Authorization header or duplicates this error handling.
  */
 
 /** Normalized shape every failed request throws, built from the backend's ApiResponse envelope. */
@@ -24,10 +26,13 @@ export class ApiError extends Error {
 export const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL,
   timeout: 15_000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
 })
 
 // Authorization header, attached to every request from the auth store's current token — never
-// hardcoded, never set ad hoc by an individual service call.
+// hardcoded, never logged, never set ad hoc by an individual service call.
 http.interceptors.request.use((config) => {
   const auth = useAuthStore()
 
@@ -38,6 +43,15 @@ http.interceptors.request.use((config) => {
   return config
 })
 
+/**
+ * The path to send the user back to after logging in again — `null` before the router's first
+ * navigation has resolved (`matched` is empty), which avoids ever preserving a bogus "redirect"
+ * target from a request that raced app boot.
+ */
+function currentFullPath(): string | null {
+  return router.currentRoute.value.matched.length > 0 ? router.currentRoute.value.fullPath : null
+}
+
 // Centralized response handling: every failure, from every service, is normalized into the same
 // ApiError shape here — callers never branch on raw Axios/HTTP details themselves.
 http.interceptors.response.use(
@@ -46,15 +60,30 @@ http.interceptors.response.use(
     const status = error.response?.status ?? 0
     const body = error.response?.data
 
-    // 401 handling: a *session* becoming invalid (expired/revoked token on an authenticated
-    // request) triggers a forced logout + redirect. A 401 on the login/register call itself — bad
-    // credentials — leaves auth.token untouched and is handled by the caller as a normal form
-    // error, never a navigation.
     if (status === 401) {
       const auth = useAuthStore()
 
+      // A *session* becoming invalid (expired/revoked token on an authenticated request) clears
+      // the stale state and sends the user back to sign in, preserving where they were headed so
+      // they land there again after logging back in. A 401 on the login call itself — bad
+      // credentials — leaves auth state untouched; that's a normal form error for the caller
+      // (LoginPage) to display, never a forced navigation.
       if (auth.isAuthenticated) {
-        void auth.logout()
+        auth.clearSession()
+
+        const intendedPath = currentFullPath()
+        router.push(
+          intendedPath && intendedPath !== '/login'
+            ? { path: '/login', query: { redirect: intendedPath } }
+            : '/login',
+        )
+      }
+    } else if (status === 403) {
+      // A 403 means the session is valid but not permitted here — that's not a reason to log the
+      // user out (their token is still good for everything else). Route to /unauthorized instead;
+      // avoid pushing again if they're somehow already there.
+      if (router.currentRoute.value.path !== '/unauthorized') {
+        router.push('/unauthorized')
       }
     }
 
