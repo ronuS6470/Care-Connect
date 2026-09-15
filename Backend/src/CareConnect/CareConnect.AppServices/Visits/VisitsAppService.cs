@@ -4,7 +4,11 @@ using CareConnect.DTOs.Common;
 using CareConnect.DTOs.Enums;
 using CareConnect.DTOs.Reporting;
 using CareConnect.DTOs.Visits;
-using CareConnect.Queries.Visits;
+using CareConnect.Queries.Visits.GetTodaysVisits;
+using CareConnect.Queries.Visits.GetUpcomingVisits;
+using CareConnect.Queries.Visits.GetVisitById;
+using CareConnect.Queries.Visits.GetVisitTasks;
+using CareConnect.Queries.Visits.GetVisits;
 using MediatR;
 
 namespace CareConnect.AppServices.Visits;

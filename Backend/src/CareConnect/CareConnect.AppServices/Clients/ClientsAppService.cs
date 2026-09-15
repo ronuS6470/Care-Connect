@@ -2,7 +2,8 @@ using CareConnect.AppServices.Security;
 using CareConnect.Commands.Clients;
 using CareConnect.DTOs.Clients;
 using CareConnect.DTOs.Common;
-using CareConnect.Queries.Clients;
+using CareConnect.Queries.Clients.GetClientById;
+using CareConnect.Queries.Clients.GetClients;
 using MediatR;
 
 namespace CareConnect.AppServices.Clients;

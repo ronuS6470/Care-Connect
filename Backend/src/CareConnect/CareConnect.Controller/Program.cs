@@ -5,7 +5,6 @@ using CareConnect.Controller.Middleware;
 using CareConnect.DTOs.Common;
 using CareConnect.Infrastructure.DependencyInjection;
 using CareConnect.Queries;
-using CareConnect.Queries.DependencyInjection;
 using Microsoft.AspNetCore.Mvc;
 using Serilog;
 
@@ -17,9 +16,10 @@ builder.Host.UseSerilog((context, services, configuration) => configuration
 builder.Services
     .AddInfrastructure(builder.Configuration, builder.Environment.IsDevelopment())
     .AddAppServices()
-    .AddCommands()
-    .AddQueries();
+    .AddCommands();
 
+// Query handlers need no registrations of their own: each one runs its own SQL through
+// IDbConnectionFactory (registered by AddInfrastructure) and is discovered by this scan.
 builder.Services.AddMediatR(cfg => cfg.RegisterServicesFromAssemblies(
     typeof(CommandsAssemblyMarker).Assembly,
     typeof(QueriesAssemblyMarker).Assembly));

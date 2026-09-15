@@ -1,25 +1,32 @@
 using System.Collections.Concurrent;
-using System.Reflection;
 
 namespace CareConnect.Queries.Common;
 
-/// <summary>Loads and caches SQL text embedded as a resource in a Queries-layer assembly.</summary>
+/// <summary>Loads and caches SQL text embedded as a resource in the Queries assembly.</summary>
 public static class SqlResourceLoader
 {
     private static readonly ConcurrentDictionary<string, string> Cache = new();
 
-    /// <param name="relativeResourcePath">
-    /// Dotted path under the assembly's default namespace, e.g. "CareTasks.Repositories.Sql.GetById.sql".
+    /// <summary>
+    /// Loads <paramref name="fileName"/> from the folder <paramref name="anchor"/> lives in.
+    /// </summary>
+    /// <param name="anchor">
+    /// Any type declared in the same folder as the .sql file — normally the handler that runs it.
+    /// This relies on namespace matching folder path, which is what makes an embedded resource's
+    /// manifest name "{Namespace}.{FileName}". Move a file without its handler (or rename a
+    /// namespace without moving the folder) and this throws on first use.
     /// </param>
-    public static string Load(Assembly assembly, string relativeResourcePath)
+    /// <param name="fileName">e.g. "GetClientsQuery.sql".</param>
+    public static string Load(Type anchor, string fileName)
     {
-        var resourceName = $"{assembly.GetName().Name}.{relativeResourcePath}";
+        var resourceName = $"{anchor.Namespace}.{fileName}";
 
         return Cache.GetOrAdd(resourceName, name =>
         {
-            using var stream = assembly.GetManifestResourceStream(name)
+            using var stream = anchor.Assembly.GetManifestResourceStream(name)
                 ?? throw new InvalidOperationException(
-                    $"Embedded SQL resource '{name}' was not found in assembly '{assembly.FullName}'.");
+                    $"Embedded SQL resource '{name}' was not found. The .sql file must sit in the same folder as " +
+                    $"'{anchor.FullName}' and be named '{fileName}'.");
             using var reader = new StreamReader(stream);
 
             return reader.ReadToEnd();

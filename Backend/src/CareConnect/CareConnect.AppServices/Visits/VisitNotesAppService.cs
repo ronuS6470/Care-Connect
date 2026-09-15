@@ -1,7 +1,7 @@
 using CareConnect.AppServices.Security;
 using CareConnect.Commands.Visits;
 using CareConnect.DTOs.Visits;
-using CareConnect.Queries.Visits;
+using CareConnect.Queries.Visits.GetVisitNotes;
 using MediatR;
 
 namespace CareConnect.AppServices.Visits;

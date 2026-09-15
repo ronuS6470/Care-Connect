@@ -31,15 +31,21 @@ The repository holds two independently-runnable applications:
 - **.NET SDK 10**
 - **SQL Server LocalDB** (ships with the SQL Server Express / Visual Studio installers)
 - **Node.js 20+**
+- **`dotnet-ef`** tool (`dotnet tool install --global dotnet-ef`)
 - `sqlcmd` on `PATH` for the database script
 
 ### 1. Database
 
-The schema is **not** managed by EF Core migrations — there is no `Migrations/` folder, and the
-database was provisioned outside this repository. Schema changes are checked-in SQL scripts under
-[`Backend/db/`](Backend/db), applied in filename order.
+The schema is managed by **EF Core migrations**, in
+[`CareConnect.Infrastructure/Persistence/Migrations/`](Backend/src/CareConnect/CareConnect.Infrastructure/Persistence/Migrations).
+Create or update your local database with:
 
-Apply them against your local instance:
+```bash
+cd Backend/src/CareConnect
+dotnet ef database update --project CareConnect.Infrastructure --startup-project CareConnect.Controller
+```
+
+Then apply the checked-in SQL under [`Backend/db/`](Backend/db), in filename order:
 
 ```bash
 cd Backend/db
@@ -48,8 +54,14 @@ sqlcmd -S "(localdb)\mssqllocaldb" -d CareConnectDb -i 001-add-password-auth.sql
 
 Each script is written to be **idempotent** — safe to re-run.
 
-> `001-add-password-auth.sql` also backfills a development password onto every existing user.
-> It is seed data, not production-safe. See [Seeded accounts](#seeded-accounts).
+> **Known gap:** `001-add-password-auth.sql` currently adds the `Users.PasswordHash` column itself,
+> outside EF — there is no migration for it, and the model snapshot doesn't know it exists. Until
+> that's moved into a proper migration, **always run the script after `database update`** (login
+> fails with *Invalid column name 'PasswordHash'* otherwise), and expect the next
+> `dotnet ef migrations add` to try to add the column again.
+>
+> The script also backfills a development password onto every existing user. It is seed data, not
+> production-safe. See [Seeded accounts](#seeded-accounts).
 
 ### 2. Backend
 
@@ -249,7 +261,7 @@ Controller  →  AppServices  →  Commands   →  Infrastructure  →  DTOs
 | `CareConnect.Controller` | HTTP surface, middleware, DI composition root |
 | `CareConnect.AppServices` | Orchestration — one method per controller action, dispatching via MediatR |
 | `CareConnect.Commands` | Writes. MediatR handlers, FluentValidation validators, AutoMapper profiles |
-| `CareConnect.Queries` | Reads. Dapper against `.sql` embedded resources |
+| `CareConnect.Queries` | Reads. One folder per query call: its query, handler, `.sql`, and result types |
 | `CareConnect.Infrastructure` | EF Core `DbContext`, entities, write repositories, auth primitives |
 | `CareConnect.DTOs` | Wire contracts and enums. Depends on nothing |
 
@@ -259,6 +271,66 @@ Tests: `CareConnect.{AppServices,Commands,Queries}.Tests` and `CareConnect.Integ
 go through Dapper with hand-written SQL kept as embedded `.sql` resources, so read projections never
 drag entity graphs around. Both share one connection string, so they can never drift onto different
 databases.
+
+### Queries: one folder per call
+
+Every read is a self-contained folder. The handler runs its own SQL — there is no read-side
+repository layer:
+
+```
+CareConnect.Queries/
+  Clients/
+    GetClients/
+      GetClientsQuery.cs            MediatR request record
+      GetClientsQueryHandler.cs     runs the SQL below via IDbConnectionFactory
+      GetClientsQuery.sql
+      GetClientsCountQuery.sql      paged calls carry a count query beside the data query
+    GetClientById/
+      GetClientByIdQuery.cs
+      GetClientByIdQueryHandler.cs
+      GetClientByIdQuery.sql
+      CaregiverHasClientAssignmentQuery.sql
+  Visits/
+    VisitsSharedSql.cs              SQL used by more than one Visits call…
+    GetVisitTasksByVisitIdQuery.sql …lives at the feature root
+    GetVisitById/
+      …
+      GetVisitByIdQueryResult.cs    internal row type, when a call needs one
+  Security/                         RequesterResolver, VisitAccessResolver + their SQL
+```
+
+The rules:
+
+- **A file used by one call lives in that call's folder. A file shared by several lives at the
+  feature root** — e.g. `VisitsSharedSql`, `ReportingSharedSql`, `Reports/ReportAccess.cs`.
+- **Results are the existing DTOs.** A `<Call>QueryResult.cs` exists only when the SQL's row shape
+  differs from the DTO — typically extra columns an ownership check needs before mapping.
+- **Every `.sql` file is named `<Name>Query.sql`.**
+- **Namespace must match folder path.** `SqlResourceLoader.Load(typeof(Handler), "X.sql")` finds a
+  file by its anchor type's namespace, so moving a file without its handler — or renaming a
+  namespace without moving the folder — breaks loading.
+
+Because SQL loads in static initializers, a bad path compiles fine and would only fail on the first
+request. `SqlResourceLoadingTests` (in `CareConnect.Queries.Tests`) runs every static initializer
+and checks every embedded `.sql` sits in a folder that has code, so these mistakes fail `dotnet test`
+instead of a live request.
+
+**Multi-statement batches are read by position.** The dashboards and the availability-conflicts
+report send several `SELECT`s in one round trip and read the result sets in order. Each of those
+`.sql` files says so in its header — reordering a `SELECT` means updating the handler.
+
+**Row-scoped list queries branch on a role parameter.** `GetClients`, `GetAssignments`, `GetVisits`,
+and `GetUpcomingVisits` serve all three roles from one static statement:
+`@RequesterRole = 1 OR (@RequesterRole = 3 AND …) OR (@RequesterRole = 2 AND …)`. Those statements
+carry `OPTION (RECOMPILE)`, so a plan cached for one role is never reused for another.
+
+> This layout deliberately departs from `.claude/NEW-PROJECT-REFERENCE.md`, which describes shared
+> `Queries/Repositories/<Feature>DapperRepository` classes. The per-call layout keeps everything a
+> read needs in one place.
+
+**Known index opportunity.** The hours, earnings, and duration reports all filter on
+`Visits.ActualStartUtc`, which has no index. Once visit volume warrants it:
+`CREATE INDEX IX_Visits_ActualStartUtc ON Visits(ActualStartUtc) WHERE ActualStartUtc IS NOT NULL`.
 
 ### Error handling
 
@@ -384,7 +456,8 @@ Read endpoints are **row-scoped server-side** by the caller's identity: a caregi
 - **A 409 on visit creation is a scheduling conflict** and is surfaced with its own heading. The
   frontend never re-derives that decision.
 - Verify frontend changes with `npm run type-check` **and** `npm run build`; verify backend changes
-  with `dotnet build`.
+  with `dotnet build` **and** `dotnet test` — a misplaced `.sql` file compiles fine and is only
+  caught by the tests.
 
 ---
 
@@ -404,6 +477,14 @@ exercise real tokens.
 
 **Startup throws about `Jwt:SigningKey`**
 It is missing or under 32 bytes. Supply it via user-secrets or `Jwt__SigningKey`.
+
+**Login fails with `Invalid column name 'PasswordHash'`**
+The database was built from migrations alone. Run `Backend/db/001-add-password-auth.sql` — see the
+known gap under [Database](#1-database).
+
+**`Embedded SQL resource '…' was not found`**
+A `.sql` file doesn't sit beside the type that loads it, or a namespace no longer matches its folder.
+`dotnet test` on `CareConnect.Queries.Tests` names the exact file.
 
 **`Invalid email or password.` for a user you know exists**
 That account's `PasswordHash` is probably `NULL` — it predates local sign-in. Re-run
