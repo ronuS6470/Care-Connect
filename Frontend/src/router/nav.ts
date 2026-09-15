@@ -12,14 +12,17 @@ export const ADMIN_NAV: NavLink[] = [
 
 export const CAREGIVER_NAV: NavLink[] = [
   { label: 'Dashboard', to: '/caregiver/dashboard', icon: 'dashboard' },
-  { label: 'My Visits', to: '/caregiver/visits', icon: 'visits' },
-  { label: 'My Availability', to: '/caregiver/availability', icon: 'availability' },
-  { label: 'My Earnings', to: '/caregiver/earnings', icon: 'earnings' },
+  { label: 'My Clients', to: '/caregiver/clients', icon: 'clients' },
+  { label: "Today's Visits", to: '/caregiver/visits/today', icon: 'visits' },
+  { label: 'Upcoming Visits', to: '/caregiver/visits/upcoming', icon: 'visits' },
+  { label: 'Availability', to: '/caregiver/availability', icon: 'availability' },
+  { label: 'Earnings', to: '/caregiver/earnings', icon: 'earnings' },
 ]
 
 export const CLIENT_NAV: NavLink[] = [
   { label: 'Dashboard', to: '/client/dashboard', icon: 'dashboard' },
-  { label: 'My Visits', to: '/client/visits', icon: 'visits' },
   { label: 'My Caregiver', to: '/client/caregiver', icon: 'caregivers' },
-  { label: 'Visit Notes', to: '/client/notes', icon: 'notes' },
+  { label: 'Upcoming Visits', to: '/client/visits/upcoming', icon: 'visits' },
+  { label: 'Visit History', to: '/client/visits/history', icon: 'reports' },
+  { label: 'Profile', to: '/client/profile', icon: 'profile' },
 ]

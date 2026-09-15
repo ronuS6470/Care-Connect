@@ -1,8 +1,16 @@
 <script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+import Breadcrumb from '@/components/common/Breadcrumb.vue'
 import UserMenu from '@/components/common/UserMenu.vue'
 import { useUiStore } from '@/stores/ui'
 
 const ui = useUiStore()
+const route = useRoute()
+
+const breadcrumbs = computed(() => route.meta.breadcrumb ?? [])
+const pageTitle = computed(() => route.meta.title ?? 'CareConnect')
 </script>
 
 <template>
@@ -19,7 +27,8 @@ const ui = useUiStore()
     </button>
 
     <div class="min-w-0 flex-1">
-      <slot />
+      <Breadcrumb v-if="breadcrumbs.length > 1" :items="breadcrumbs" class="mb-0.5 hidden sm:flex" />
+      <h1 class="truncate text-base font-semibold text-ink sm:text-lg">{{ pageTitle }}</h1>
     </div>
 
     <div class="flex shrink-0 items-center gap-1.5">

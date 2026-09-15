@@ -144,4 +144,36 @@
   .card-base {
     @apply rounded-card border border-border bg-surface-elevated shadow-card;
   }
+
+  .badge-base {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium;
+  }
+
+  .alert-base {
+    @apply flex items-start gap-3 rounded-lg border p-3 text-sm;
+  }
+
+  .table-base {
+    @apply w-full text-sm;
+  }
+
+  .table-head-cell {
+    @apply px-4 py-3 text-left font-medium text-ink-muted;
+  }
+
+  .table-row {
+    @apply border-b border-border last:border-0 hover:bg-surface-sunken/40;
+  }
+
+  .table-cell {
+    @apply px-4 py-3 text-ink;
+  }
+
+  .dropdown-panel {
+    @apply rounded-xl border border-border bg-surface-elevated p-1.5 shadow-popover;
+  }
+
+  .dropdown-item {
+    @apply flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-ink hover:bg-surface-sunken;
+  }
 }

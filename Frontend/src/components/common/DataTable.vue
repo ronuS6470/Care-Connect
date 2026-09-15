@@ -52,25 +52,25 @@ defineSlots<{
     <template v-else>
       <!-- Desktop / tablet: standard table -->
       <div class="hidden overflow-x-auto md:block">
-        <table class="w-full text-sm">
+        <table class="table-base">
           <thead>
             <tr class="border-b border-border bg-surface-sunken/60">
               <th
                 v-for="column in columns"
                 :key="column.key"
                 scope="col"
-                :class="['px-4 py-3 font-medium text-ink-muted', alignClass[column.align ?? 'left'], column.headerClass]"
+                :class="['table-head-cell', alignClass[column.align ?? 'left'], column.headerClass]"
               >
                 {{ column.label }}
               </th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="row in rows" :key="rowKey(row)" class="border-b border-border last:border-0 hover:bg-surface-sunken/40">
+            <tr v-for="row in rows" :key="rowKey(row)" class="table-row">
               <td
                 v-for="column in columns"
                 :key="column.key"
-                :class="['px-4 py-3 text-ink', alignClass[column.align ?? 'left'], column.cellClass]"
+                :class="['table-cell', alignClass[column.align ?? 'left'], column.cellClass]"
               >
                 <slot :name="`cell-${column.key}`" :row="row" :value="cellValue(column, row)">
                   {{ cellValue(column, row) }}

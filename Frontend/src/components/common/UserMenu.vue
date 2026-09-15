@@ -43,20 +43,13 @@ useClickOutside(menuRef, () => {
       leave-from-class="opacity-100 scale-100"
       leave-to-class="opacity-0 scale-95"
     >
-      <div
-        v-if="open"
-        class="absolute right-0 z-40 mt-2 w-56 origin-top-right rounded-xl border border-border bg-surface-elevated p-1.5 shadow-popover"
-      >
+      <div v-if="open" class="dropdown-panel absolute right-0 z-40 mt-2 w-56 origin-top-right">
         <div class="px-2.5 py-2 sm:hidden">
           <p class="text-sm font-medium text-ink">{{ auth.fullName ?? 'Guest' }}</p>
           <p class="text-xs text-ink-muted">{{ auth.email }}</p>
         </div>
 
-        <button
-          type="button"
-          class="flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-ink hover:bg-surface-sunken"
-          @click="toggle"
-        >
+        <button type="button" class="dropdown-item justify-between" @click="toggle">
           <span>{{ isDark ? 'Dark mode' : 'Light mode' }}</span>
           <span
             class="relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors"
@@ -73,7 +66,7 @@ useClickOutside(menuRef, () => {
 
         <button
           type="button"
-          class="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-500/10"
+          class="dropdown-item text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-500/10"
           @click="auth.logout()"
         >
           <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">

@@ -2,6 +2,7 @@
 import { reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
+import AppAlert from '@/components/common/AppAlert.vue'
 import AppButton from '@/components/common/AppButton.vue'
 import AppInput from '@/components/common/AppInput.vue'
 import { ApiError } from '@/services/http'
@@ -62,13 +63,7 @@ async function handleSubmit() {
       </div>
 
       <form class="card-base space-y-4 p-6" novalidate @submit.prevent="handleSubmit">
-        <div
-          v-if="apiError"
-          role="alert"
-          class="rounded-lg border border-danger-200 bg-danger-50 px-3 py-2.5 text-sm text-danger-700 dark:border-danger-500/20 dark:bg-danger-500/10 dark:text-danger-500"
-        >
-          {{ apiError }}
-        </div>
+        <AppAlert v-if="apiError" tone="danger" dismissible @dismiss="apiError = null">{{ apiError }}</AppAlert>
 
         <AppInput
           v-model="form.email"

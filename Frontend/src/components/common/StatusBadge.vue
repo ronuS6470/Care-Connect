@@ -23,7 +23,7 @@ const toneClasses: Record<BadgeTone, string> = {
   neutral: 'bg-surface-sunken text-ink-muted',
 }
 
-const classes = computed(() => cn('inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium', toneClasses[props.tone]))
+const classes = computed(() => cn('badge-base', toneClasses[props.tone]))
 </script>
 
 <template>
