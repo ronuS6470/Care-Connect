@@ -1,23 +1,21 @@
-using CareConnect.DTOs.Errors;
-using CareConnect.Infrastructure.Persistence;
+using CareConnect.Infrastructure.Errors;
+using CareConnect.Infrastructure.Repositories.Assignments;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace CareConnect.Commands.Assignments;
 
 public sealed class UpdateAssignmentCommandHandler : IRequestHandler<UpdateAssignmentCommand>
 {
-    private readonly CareConnectDbContext _dbContext;
+    private readonly IAssignmentRepository _repository;
 
-    public UpdateAssignmentCommandHandler(CareConnectDbContext dbContext)
+    public UpdateAssignmentCommandHandler(IAssignmentRepository repository)
     {
-        _dbContext = dbContext;
+        _repository = repository;
     }
 
     public async Task Handle(UpdateAssignmentCommand request, CancellationToken cancellationToken)
     {
-        var assignment = await _dbContext.CaregiverAssignments
-            .FirstOrDefaultAsync(a => a.Id == request.AssignmentId, cancellationToken)
+        var assignment = await _repository.GetByIdAsync(request.AssignmentId, cancellationToken)
             ?? throw new NotFoundException($"Assignment {request.AssignmentId} was not found.");
 
         var dto = request.Assignment;
@@ -26,7 +24,7 @@ public sealed class UpdateAssignmentCommandHandler : IRequestHandler<UpdateAssig
         // command's payload has no StartDate to compare against (only the stored assignment does).
         if (dto.EndDate.HasValue && dto.EndDate.Value < assignment.StartDate)
         {
-            throw new BusinessRuleViolationException("EndDate must be on or after the assignment's StartDate.");
+            throw new BusinessRuleException("EndDate must be on or after the assignment's StartDate.");
         }
 
         assignment.Status = dto.Status;
@@ -34,6 +32,6 @@ public sealed class UpdateAssignmentCommandHandler : IRequestHandler<UpdateAssig
         assignment.Notes = dto.Notes;
         assignment.UpdatedAtUtc = DateTime.UtcNow;
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _repository.SaveChangesAsync(cancellationToken);
     }
 }

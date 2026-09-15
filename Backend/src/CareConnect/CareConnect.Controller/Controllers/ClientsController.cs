@@ -1,10 +1,7 @@
-using CareConnect.Commands.Clients;
+using CareConnect.AppServices.Clients;
 using CareConnect.DTOs.Clients;
 using CareConnect.DTOs.Common;
 using CareConnect.DTOs.Enums;
-using CareConnect.DTOs.Errors;
-using CareConnect.Queries.Clients;
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,16 +12,12 @@ namespace CareConnect.Controller.Controllers;
 [Authorize]
 public sealed class ClientsController : ControllerBase
 {
-    private readonly IMediator _mediator;
+    private readonly IClientsAppService _clientsAppService;
 
-    public ClientsController(IMediator mediator)
+    public ClientsController(IClientsAppService clientsAppService)
     {
-        _mediator = mediator;
+        _clientsAppService = clientsAppService;
     }
-
-    private string RequestingAuth0UserId =>
-        User.FindFirst("sub")?.Value
-            ?? throw new ForbiddenException("Token is missing a subject claim.");
 
     [HttpGet]
     public async Task<ActionResult<PagedResponseDto<ClientDto>>> GetClients(
@@ -34,16 +27,14 @@ public sealed class ClientsController : ControllerBase
         [FromQuery] bool? isActive = null,
         CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(
-            new GetClientsQuery(page, pageSize, search, isActive, RequestingAuth0UserId),
-            cancellationToken);
+        var result = await _clientsAppService.GetClientsAsync(page, pageSize, search, isActive, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<ClientDto>> GetClientById(int id, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetClientByIdQuery(id, RequestingAuth0UserId), cancellationToken);
+        var result = await _clientsAppService.GetClientByIdAsync(id, cancellationToken);
         return result is null ? NotFound() : Ok(result);
     }
 
@@ -53,7 +44,7 @@ public sealed class ClientsController : ControllerBase
         [FromBody] CreateClientDto dto,
         CancellationToken cancellationToken)
     {
-        var id = await _mediator.Send(new CreateClientCommand(dto), cancellationToken);
+        var id = await _clientsAppService.CreateClientAsync(dto, cancellationToken);
         return CreatedAtAction(nameof(GetClientById), new { id }, id);
     }
 
@@ -64,7 +55,7 @@ public sealed class ClientsController : ControllerBase
         [FromBody] UpdateClientDto dto,
         CancellationToken cancellationToken)
     {
-        await _mediator.Send(new UpdateClientCommand(id, dto), cancellationToken);
+        await _clientsAppService.UpdateClientAsync(id, dto, cancellationToken);
         return NoContent();
     }
 
@@ -72,7 +63,7 @@ public sealed class ClientsController : ControllerBase
     [Authorize(Roles = nameof(UserRole.Admin))]
     public async Task<IActionResult> DeleteClient(int id, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new DeleteClientCommand(id), cancellationToken);
+        await _clientsAppService.DeleteClientAsync(id, cancellationToken);
         return NoContent();
     }
 }

@@ -1,23 +1,32 @@
-using CareConnect.DTOs.Errors;
-using CareConnect.Infrastructure.Persistence;
+using CareConnect.DTOs.Enums;
+using CareConnect.Infrastructure.Entities;
+using CareConnect.Infrastructure.Errors;
+using CareConnect.Infrastructure.Repositories.Visits;
 using MediatR;
 
 namespace CareConnect.Commands.Visits;
 
 public sealed class UncompleteVisitTaskCommandHandler : IRequestHandler<UncompleteVisitTaskCommand>
 {
-    private readonly CareConnectDbContext _dbContext;
+    private readonly IVisitRepository _repository;
 
-    public UncompleteVisitTaskCommandHandler(CareConnectDbContext dbContext)
+    public UncompleteVisitTaskCommandHandler(IVisitRepository repository)
     {
-        _dbContext = dbContext;
+        _repository = repository;
     }
 
     public async Task Handle(UncompleteVisitTaskCommand request, CancellationToken cancellationToken)
     {
-        var (visit, task) = await VisitTaskLookup.LoadAsync(_dbContext, request.VisitId, request.VisitTaskId, cancellationToken);
+        var (visit, task) = await _repository.GetTaskAsync(request.VisitId, request.VisitTaskId, cancellationToken);
 
-        await VisitAccessControl.EnsureCanManageVisitAsync(_dbContext, visit, request.RequestingAuth0UserId, cancellationToken);
+        var user = await _repository.GetUserByAuth0UserIdAsync(request.RequestingAuth0UserId, cancellationToken)
+            ?? throw new ForbiddenException("This account is not recognized.");
+
+        Caregiver? caregiver = user.Role == UserRole.Caregiver
+            ? await _repository.GetCaregiverByAuth0UserIdAsync(request.RequestingAuth0UserId, cancellationToken)
+            : null;
+
+        VisitAccessControl.EnsureCanManageVisit(user, caregiver, visit);
 
         // The business rule gating this specific command: once a visit is closed out
         // (Completed/Cancelled/NoShow), its task record is history and can't be reopened.
@@ -25,13 +34,13 @@ public sealed class UncompleteVisitTaskCommandHandler : IRequestHandler<Uncomple
 
         if (!task.IsCompleted)
         {
-            throw new BusinessRuleViolationException("This task is not marked complete.");
+            throw new BusinessRuleException("This task is not marked complete.");
         }
 
         task.IsCompleted = false;
         task.CompletedAtUtc = null;
         task.UpdatedAtUtc = DateTime.UtcNow;
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _repository.SaveChangesAsync(cancellationToken);
     }
 }

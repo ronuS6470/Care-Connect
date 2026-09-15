@@ -1,48 +1,39 @@
-using CareConnect.DTOs.Errors;
-using CareConnect.Infrastructure.Persistence;
+using AutoMapper;
+using CareConnect.Infrastructure.Errors;
+using CareConnect.Infrastructure.Repositories.Availability;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace CareConnect.Commands.Availability;
 
 public sealed class UpdateAvailabilityCommandHandler : IRequestHandler<UpdateAvailabilityCommand>
 {
-    private readonly CareConnectDbContext _dbContext;
+    private readonly ICaregiverAvailabilityRepository _repository;
+    private readonly IMapper _mapper;
 
-    public UpdateAvailabilityCommandHandler(CareConnectDbContext dbContext)
+    public UpdateAvailabilityCommandHandler(ICaregiverAvailabilityRepository repository, IMapper mapper)
     {
-        _dbContext = dbContext;
+        _repository = repository;
+        _mapper = mapper;
     }
 
     public async Task Handle(UpdateAvailabilityCommand request, CancellationToken cancellationToken)
     {
-        var availability = await _dbContext.CaregiverAvailabilities
-            .FirstOrDefaultAsync(a => a.Id == request.AvailabilityId, cancellationToken)
+        var availability = await _repository.GetByIdAsync(request.AvailabilityId, cancellationToken)
             ?? throw new NotFoundException($"Availability {request.AvailabilityId} was not found.");
 
         var dto = request.Availability;
 
-        var hasOverlap = await _dbContext.CaregiverAvailabilities.AnyAsync(a =>
-            a.Id != request.AvailabilityId &&
-            a.CaregiverId == availability.CaregiverId &&
-            a.DayOfWeek == dto.DayOfWeek &&
-            a.IsActive &&
-            a.StartTime < dto.EndTime &&
-            a.EndTime > dto.StartTime,
-            cancellationToken);
+        var hasOverlap = await _repository.ExistsOverlappingWindowAsync(
+            availability.CaregiverId, dto.DayOfWeek, dto.StartTime, dto.EndTime, request.AvailabilityId, cancellationToken);
 
         if (hasOverlap)
         {
-            throw new BusinessRuleViolationException(
+            throw new ConflictException(
                 "This availability period overlaps with an existing one for that caregiver and day.");
         }
 
-        availability.DayOfWeek = dto.DayOfWeek;
-        availability.StartTime = dto.StartTime;
-        availability.EndTime = dto.EndTime;
-        availability.IsActive = dto.IsActive;
-        availability.UpdatedAtUtc = DateTime.UtcNow;
+        _mapper.Map(dto, availability);
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _repository.SaveChangesAsync(cancellationToken);
     }
 }

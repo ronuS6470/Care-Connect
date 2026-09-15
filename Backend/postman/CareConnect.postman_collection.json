@@ -1,0 +1,564 @@
+{
+  "info": {
+    "_postman_id": "c4a7e2b0-6b1d-4e8a-9c2f-1a2b3c4d5e6f",
+    "name": "CareConnect API",
+    "description": "Full endpoint coverage for the CareConnect backend.\n\n**Before you start:**\n1. Run the API (`dotnet run --project src/CareConnect/CareConnect.Controller` from the Backend folder) so it's listening on {{baseUrl}}.\n2. **Auth is bypassed for local testing** (Auth0:BypassForLocalTesting=true in appsettings.Development.json — Development-environment only, never active outside it). A collection-level pre-request script stamps every request with `X-Dev-Sub`/`X-Dev-Role` headers from the `devSub`/`devRole` variables below, defaulting to the seeded Admin (`dev-admin`). No token needed.\n3. The Caregiver-only actions (check-in / check-out / complete a visit) already carry explicit `X-Dev-Sub: dev-caregiver-1` / `X-Dev-Role: Caregiver` headers, since they need to act as the specific caregiver assigned to `{{visitId}}`.\n4. To go back to real Auth0 tokens later: set `Auth0:BypassForLocalTesting` to `false`, then use the `accessToken`/`caregiverAccessToken` variables with Bearer auth on each request instead.\n5. All the numeric `*Id` variables below are pre-filled with real rows from the seeded dev database. Adjust them if you re-seed or point at a different database.\n6. This API has no user-creation endpoint — Users are provisioned externally (Auth0 sync). The Create Caregiver / Create Client requests need a real `userId` of a User with the matching Role and no existing profile; the placeholder value will 404 until you supply one.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.request.headers.has('X-Dev-Sub')) {",
+          "    pm.request.headers.add({ key: 'X-Dev-Sub', value: pm.collectionVariables.get('devSub') || 'dev-admin' });",
+          "}",
+          "if (!pm.request.headers.has('X-Dev-Role')) {",
+          "    pm.request.headers.add({ key: 'X-Dev-Role', value: pm.collectionVariables.get('devRole') || 'Admin' });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "https://localhost:7234", "type": "string" },
+    { "key": "devSub", "value": "dev-admin", "type": "string", "description": "Default identity for every request (matches Users.Auth0UserId=dev-admin, Role=Admin)" },
+    { "key": "devRole", "value": "Admin", "type": "string", "description": "Default role claim for [Authorize(Roles=...)] checks" },
+    { "key": "accessToken", "value": "", "type": "string", "description": "Only used if you switch back to real Bearer auth (BypassForLocalTesting=false)" },
+    { "key": "caregiverAccessToken", "value": "", "type": "string", "description": "Only used if you switch back to real Bearer auth (BypassForLocalTesting=false)" },
+    { "key": "careTaskId", "value": "1", "type": "string" },
+    { "key": "caregiverId", "value": "2", "type": "string" },
+    { "key": "clientId", "value": "2", "type": "string" },
+    { "key": "assignmentId", "value": "2", "type": "string" },
+    { "key": "availabilityId", "value": "2", "type": "string" },
+    { "key": "visitId", "value": "3", "type": "string", "description": "Scheduled visit, assignment {{assignmentId}}, caregiver {{caregiverId}}" },
+    { "key": "visitIdCompleted", "value": "2", "type": "string", "description": "A Completed visit (has a VisitNote already)" },
+    { "key": "visitTaskId", "value": "3", "type": "string", "description": "Belongs to {{visitId}}" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Care Tasks",
+      "item": [
+        {
+          "name": "List care tasks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/care-tasks?page=1&pageSize=20&isActive=true"
+          }
+        },
+        {
+          "name": "Get care task by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/care-tasks/{{careTaskId}}"
+          }
+        },
+        {
+          "name": "Create care task (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Pet Care (Postman Test)\",\n  \"description\": \"Feed and walk the client's pet during the visit.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/care-tasks"
+          }
+        },
+        {
+          "name": "Update care task (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Medication Reminder (Updated)\",\n  \"description\": \"Remind and observe the client taking prescribed medication on schedule. Log any refusals.\",\n  \"isActive\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/care-tasks/{{careTaskId}}"
+          }
+        },
+        {
+          "name": "Delete care task (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/care-tasks/{{careTaskId}}",
+            "description": "Hard-deletes if unreferenced by any VisitTask, otherwise deactivates it instead."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Caregiver Availability",
+      "item": [
+        {
+          "name": "Get availability for a caregiver",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/caregiver-availability?caregiverId={{caregiverId}}"
+          }
+        },
+        {
+          "name": "Create availability window (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"caregiverId\": {{caregiverId}},\n  \"dayOfWeek\": 6,\n  \"startTime\": \"09:00:00\",\n  \"endTime\": \"13:00:00\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/caregiver-availability",
+            "description": "dayOfWeek uses .NET's DayOfWeek enum (Sunday=0 .. Saturday=6). 6=Saturday is unused by the seed data so this won't collide."
+          }
+        },
+        {
+          "name": "Update availability window (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dayOfWeek\": 1,\n  \"startTime\": \"08:00:00\",\n  \"endTime\": \"16:00:00\",\n  \"isActive\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/caregiver-availability/{{availabilityId}}"
+          }
+        },
+        {
+          "name": "Delete availability window (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/caregiver-availability/{{availabilityId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Caregivers",
+      "item": [
+        {
+          "name": "List caregivers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/caregivers?page=1&pageSize=20"
+          }
+        },
+        {
+          "name": "Get caregiver by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/caregivers/{{caregiverId}}"
+          }
+        },
+        {
+          "name": "Create caregiver (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 9999,\n  \"licenseNumber\": \"RN-00001\",\n  \"hourlyRate\": 30.00,\n  \"hireDate\": \"2026-01-15\",\n  \"dateOfBirth\": \"1990-05-01\",\n  \"yearsOfExperience\": 5\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/caregivers",
+            "description": "userId must reference an existing User with Role=Caregiver (2) and no existing Caregiver profile. Replace 9999 with a real one — this API has no user-creation endpoint."
+          }
+        },
+        {
+          "name": "Update caregiver (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"licenseNumber\": \"RN-10234\",\n  \"hourlyRate\": 34.00,\n  \"hireDate\": \"2022-01-01\",\n  \"yearsOfExperience\": 9,\n  \"isActive\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/caregivers/{{caregiverId}}"
+          }
+        },
+        {
+          "name": "Delete (deactivate) caregiver (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/caregivers/{{caregiverId}}"
+          }
+        },
+        {
+          "name": "Activate caregiver (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/caregivers/{{caregiverId}}/activate"
+          }
+        },
+        {
+          "name": "Deactivate caregiver (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/caregivers/{{caregiverId}}/deactivate"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clients",
+      "item": [
+        {
+          "name": "List clients",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/clients?page=1&pageSize=20&search=&isActive=true"
+          }
+        },
+        {
+          "name": "Get client by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/clients/{{clientId}}"
+          }
+        },
+        {
+          "name": "Create client (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 9998,\n  \"addressLine1\": \"100 New St\",\n  \"addressLine2\": null,\n  \"city\": \"Riverton\",\n  \"state\": \"OH\",\n  \"postalCode\": \"44011\",\n  \"emergencyContactName\": \"Jane Doe\",\n  \"emergencyContactPhone\": \"555-09999\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/clients",
+            "description": "userId must reference an existing User with Role=Client (3) and no existing Client profile. Replace 9998 with a real one."
+          }
+        },
+        {
+          "name": "Update client (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"addressLine1\": \"412 Oak St\",\n  \"addressLine2\": \"Apt 2\",\n  \"city\": \"Riverton\",\n  \"state\": \"OH\",\n  \"postalCode\": \"44011\",\n  \"emergencyContactName\": \"Nancy Miller\",\n  \"emergencyContactPhone\": \"555-02001\",\n  \"isActive\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/clients/{{clientId}}"
+          }
+        },
+        {
+          "name": "Delete (deactivate) client (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/clients/{{clientId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Assignments",
+      "item": [
+        {
+          "name": "List assignments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/assignments?page=1&pageSize=20&status=1"
+          }
+        },
+        {
+          "name": "Get assignment by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/assignments/{{assignmentId}}"
+          }
+        },
+        {
+          "name": "Create assignment (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"caregiverId\": 3,\n  \"clientId\": 4,\n  \"startDate\": \"2026-09-01\",\n  \"endDate\": null,\n  \"notes\": \"Created via Postman.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/assignments",
+            "description": "caregiverId=3 / clientId=4 is a pairing not already used by the seed data, so this won't collide with the 'one active assignment per caregiver+client' rule."
+          }
+        },
+        {
+          "name": "Update assignment (Admin)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": 1,\n  \"endDate\": null,\n  \"notes\": \"Updated via Postman.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/assignments/{{assignmentId}}",
+            "description": "status: 1=Active, 2=Completed, 3=Cancelled"
+          }
+        },
+        {
+          "name": "Cancel assignment (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/assignments/{{assignmentId}}/cancel"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Visits",
+      "item": [
+        {
+          "name": "List visits",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/visits?page=1&pageSize=20"
+          }
+        },
+        {
+          "name": "Today's visits",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/visits/today"
+          }
+        },
+        {
+          "name": "Upcoming visits",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/visits/upcoming?page=1&pageSize=20"
+          }
+        },
+        {
+          "name": "Get visit by id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/visits/{{visitId}}"
+          }
+        },
+        {
+          "name": "Create visit (Admin)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const start = new Date();",
+                  "start.setUTCDate(start.getUTCDate() + 60);",
+                  "while (start.getUTCDay() === 0 || start.getUTCDay() === 6) { start.setUTCDate(start.getUTCDate() + 1); }",
+                  "start.setUTCHours(8, 0, 0, 0);",
+                  "const end = new Date(start.getTime() + 60 * 60 * 1000);",
+                  "pm.collectionVariables.set('dynamicVisitStart', start.toISOString());",
+                  "pm.collectionVariables.set('dynamicVisitEnd', end.toISOString());"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"caregiverAssignmentId\": {{assignmentId}},\n  \"scheduledStartUtc\": \"{{dynamicVisitStart}}\",\n  \"scheduledEndUtc\": \"{{dynamicVisitEnd}}\",\n  \"careTaskIds\": [{{careTaskId}}]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/visits",
+            "description": "The pre-request script picks a weekday ~60 days out so it won't overlap seeded visits or fall outside the caregiver's Mon-Fri 08:00-17:00 availability."
+          }
+        },
+        {
+          "name": "Update (reschedule) visit (Admin)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const start = new Date();",
+                  "start.setUTCDate(start.getUTCDate() + 75);",
+                  "while (start.getUTCDay() === 0 || start.getUTCDay() === 6) { start.setUTCDate(start.getUTCDate() + 1); }",
+                  "start.setUTCHours(10, 0, 0, 0);",
+                  "const end = new Date(start.getTime() + 60 * 60 * 1000);",
+                  "pm.collectionVariables.set('dynamicRescheduleStart', start.toISOString());",
+                  "pm.collectionVariables.set('dynamicRescheduleEnd', end.toISOString());"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scheduledStartUtc\": \"{{dynamicRescheduleStart}}\",\n  \"scheduledEndUtc\": \"{{dynamicRescheduleEnd}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/visits/{{visitId}}",
+            "description": "Only works while the visit's Status is Scheduled."
+          }
+        },
+        {
+          "name": "Cancel visit (Admin)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cancellationReason\": \"Client requested reschedule.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/visits/{{visitId}}/cancel"
+          }
+        },
+        {
+          "name": "Check in (Caregiver)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Dev-Sub", "value": "dev-caregiver-1" },
+              { "key": "X-Dev-Role", "value": "Caregiver" }
+            ],
+            "url": "{{baseUrl}}/api/visits/{{visitId}}/check-in",
+            "description": "Caller must be the caregiver assigned to this visit. Allowed from 15 minutes before scheduledStartUtc; fails outside that window on the seeded (future) visit unless you first reschedule it to 'now'."
+          }
+        },
+        {
+          "name": "Check out (Caregiver)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "X-Dev-Sub", "value": "dev-caregiver-1" },
+              { "key": "X-Dev-Role", "value": "Caregiver" }
+            ],
+            "url": "{{baseUrl}}/api/visits/{{visitId}}/check-out",
+            "description": "Requires the visit to already be InProgress (checked in)."
+          }
+        },
+        {
+          "name": "Complete visit (Caregiver)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "X-Dev-Sub", "value": "dev-caregiver-1" },
+              { "key": "X-Dev-Role", "value": "Caregiver" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"incompleteTasksReason\": null\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/visits/{{visitId}}/complete",
+            "description": "Requires the visit to be checked in and checked out first. If any VisitTask is still incomplete, incompleteTasksReason becomes required."
+          }
+        },
+        {
+          "name": "Get visit tasks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/visits/{{visitId}}/tasks"
+          }
+        },
+        {
+          "name": "Update visit task notes (Admin/Caregiver)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Client tolerated the task well.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/visits/{{visitId}}/tasks/{{visitTaskId}}"
+          }
+        },
+        {
+          "name": "Complete visit task (Admin/Caregiver)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/visits/{{visitId}}/tasks/{{visitTaskId}}/complete"
+          }
+        },
+        {
+          "name": "Uncomplete visit task (Admin/Caregiver)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/visits/{{visitId}}/tasks/{{visitTaskId}}/uncomplete"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Visit Notes",
+      "item": [
+        {
+          "name": "Get visit notes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/visit-notes?visitId={{visitIdCompleted}}"
+          }
+        },
+        {
+          "name": "Add visit note (Admin/Caregiver)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"visitId\": {{visitIdCompleted}},\n  \"content\": \"Added a follow-up note via Postman.\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/visit-notes"
+          }
+        }
+      ]
+    }
+  ]
+}

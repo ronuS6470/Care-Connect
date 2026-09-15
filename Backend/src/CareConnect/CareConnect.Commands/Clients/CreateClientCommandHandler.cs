@@ -1,47 +1,44 @@
 using CareConnect.DTOs.Enums;
-using CareConnect.DTOs.Errors;
 using CareConnect.Infrastructure.Entities;
-using CareConnect.Infrastructure.Persistence;
+using CareConnect.Infrastructure.Errors;
+using CareConnect.Infrastructure.Repositories.Clients;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace CareConnect.Commands.Clients;
 
 public sealed class CreateClientCommandHandler : IRequestHandler<CreateClientCommand, int>
 {
-    private readonly CareConnectDbContext _dbContext;
+    private readonly IClientRepository _repository;
 
-    public CreateClientCommandHandler(CareConnectDbContext dbContext)
+    public CreateClientCommandHandler(IClientRepository repository)
     {
-        _dbContext = dbContext;
+        _repository = repository;
     }
 
     public async Task<int> Handle(CreateClientCommand request, CancellationToken cancellationToken)
     {
         var dto = request.Client;
 
-        var user = await _dbContext.Users.FirstOrDefaultAsync(u => u.Id == dto.UserId, cancellationToken)
+        var user = await _repository.GetUserByIdAsync(dto.UserId, cancellationToken)
             ?? throw new NotFoundException($"User {dto.UserId} was not found.");
 
         if (user.Role != UserRole.Client)
         {
-            throw new BusinessRuleViolationException("The linked user's role must be Client.");
+            throw new BusinessRuleException("The linked user's role must be Client.");
         }
 
-        var emailAlreadyUsedByAnotherUser = await _dbContext.Users
-            .AnyAsync(u => u.Id != user.Id && u.Email == user.Email, cancellationToken);
+        var emailAlreadyUsedByAnotherUser = await _repository.IsEmailUsedByAnotherUserAsync(user.Id, user.Email, cancellationToken);
 
         if (emailAlreadyUsedByAnotherUser)
         {
-            throw new BusinessRuleViolationException("Email must be unique.");
+            throw new ConflictException("Email must be unique.");
         }
 
-        var alreadyHasClientProfile = await _dbContext.Clients
-            .AnyAsync(c => c.UserId == dto.UserId, cancellationToken);
+        var alreadyHasClientProfile = await _repository.ExistsForUserAsync(dto.UserId, cancellationToken);
 
         if (alreadyHasClientProfile)
         {
-            throw new BusinessRuleViolationException($"User {dto.UserId} already has a client profile.");
+            throw new ConflictException($"User {dto.UserId} already has a client profile.");
         }
 
         var client = new Client
@@ -57,8 +54,8 @@ public sealed class CreateClientCommandHandler : IRequestHandler<CreateClientCom
             IsActive = true,
         };
 
-        _dbContext.Clients.Add(client);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        _repository.Add(client);
+        await _repository.SaveChangesAsync(cancellationToken);
 
         return client.Id;
     }

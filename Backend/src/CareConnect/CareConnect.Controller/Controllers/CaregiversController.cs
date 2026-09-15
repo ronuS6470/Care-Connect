@@ -1,9 +1,7 @@
-using CareConnect.Commands.Caregivers;
+using CareConnect.AppServices.Caregivers;
 using CareConnect.DTOs.Caregivers;
 using CareConnect.DTOs.Common;
 using CareConnect.DTOs.Enums;
-using CareConnect.Queries.Caregivers;
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,11 +12,11 @@ namespace CareConnect.Controller.Controllers;
 [Authorize]
 public sealed class CaregiversController : ControllerBase
 {
-    private readonly IMediator _mediator;
+    private readonly ICaregiversAppService _caregiversAppService;
 
-    public CaregiversController(IMediator mediator)
+    public CaregiversController(ICaregiversAppService caregiversAppService)
     {
-        _mediator = mediator;
+        _caregiversAppService = caregiversAppService;
     }
 
     [HttpGet]
@@ -27,14 +25,14 @@ public sealed class CaregiversController : ControllerBase
         [FromQuery] int pageSize = 20,
         CancellationToken cancellationToken = default)
     {
-        var result = await _mediator.Send(new GetCaregiversQuery(page, pageSize), cancellationToken);
+        var result = await _caregiversAppService.GetCaregiversAsync(page, pageSize, cancellationToken);
         return Ok(result);
     }
 
     [HttpGet("{id:int}")]
     public async Task<ActionResult<CaregiverDto>> GetCaregiverById(int id, CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetCaregiverByIdQuery(id), cancellationToken);
+        var result = await _caregiversAppService.GetCaregiverByIdAsync(id, cancellationToken);
         return result is null ? NotFound() : Ok(result);
     }
 
@@ -44,7 +42,7 @@ public sealed class CaregiversController : ControllerBase
         [FromBody] CreateCaregiverDto dto,
         CancellationToken cancellationToken)
     {
-        var id = await _mediator.Send(new CreateCaregiverCommand(dto), cancellationToken);
+        var id = await _caregiversAppService.CreateCaregiverAsync(dto, cancellationToken);
         return CreatedAtAction(nameof(GetCaregiverById), new { id }, id);
     }
 
@@ -55,7 +53,7 @@ public sealed class CaregiversController : ControllerBase
         [FromBody] UpdateCaregiverDto dto,
         CancellationToken cancellationToken)
     {
-        await _mediator.Send(new UpdateCaregiverCommand(id, dto), cancellationToken);
+        await _caregiversAppService.UpdateCaregiverAsync(id, dto, cancellationToken);
         return NoContent();
     }
 
@@ -63,7 +61,7 @@ public sealed class CaregiversController : ControllerBase
     [Authorize(Roles = nameof(UserRole.Admin))]
     public async Task<IActionResult> DeleteCaregiver(int id, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new DeleteCaregiverCommand(id), cancellationToken);
+        await _caregiversAppService.DeleteCaregiverAsync(id, cancellationToken);
         return NoContent();
     }
 
@@ -71,7 +69,7 @@ public sealed class CaregiversController : ControllerBase
     [Authorize(Roles = nameof(UserRole.Admin))]
     public async Task<IActionResult> ActivateCaregiver(int id, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new ActivateCaregiverCommand(id), cancellationToken);
+        await _caregiversAppService.ActivateCaregiverAsync(id, cancellationToken);
         return NoContent();
     }
 
@@ -79,7 +77,7 @@ public sealed class CaregiversController : ControllerBase
     [Authorize(Roles = nameof(UserRole.Admin))]
     public async Task<IActionResult> DeactivateCaregiver(int id, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new DeactivateCaregiverCommand(id), cancellationToken);
+        await _caregiversAppService.DeactivateCaregiverAsync(id, cancellationToken);
         return NoContent();
     }
 }

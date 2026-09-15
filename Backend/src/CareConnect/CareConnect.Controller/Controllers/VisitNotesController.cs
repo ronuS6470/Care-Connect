@@ -1,9 +1,6 @@
-using CareConnect.Commands.Visits;
+using CareConnect.AppServices.Visits;
 using CareConnect.DTOs.Enums;
-using CareConnect.DTOs.Errors;
 using CareConnect.DTOs.Visits;
-using CareConnect.Queries.Visits;
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,23 +13,19 @@ public sealed class VisitNotesController : ControllerBase
 {
     private const string AdminOrCaregiverRoles = $"{nameof(UserRole.Admin)},{nameof(UserRole.Caregiver)}";
 
-    private readonly IMediator _mediator;
+    private readonly IVisitNotesAppService _visitNotesAppService;
 
-    public VisitNotesController(IMediator mediator)
+    public VisitNotesController(IVisitNotesAppService visitNotesAppService)
     {
-        _mediator = mediator;
+        _visitNotesAppService = visitNotesAppService;
     }
-
-    private string RequestingAuth0UserId =>
-        User.FindFirst("sub")?.Value
-            ?? throw new ForbiddenException("Token is missing a subject claim.");
 
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<VisitNoteDto>>> GetVisitNotes(
         [FromQuery] int visitId,
         CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetVisitNotesQuery(visitId, RequestingAuth0UserId), cancellationToken);
+        var result = await _visitNotesAppService.GetVisitNotesAsync(visitId, cancellationToken);
         return Ok(result);
     }
 
@@ -40,7 +33,7 @@ public sealed class VisitNotesController : ControllerBase
     [Authorize(Roles = AdminOrCaregiverRoles)]
     public async Task<ActionResult<int>> AddVisitNote([FromBody] CreateVisitNoteDto dto, CancellationToken cancellationToken)
     {
-        var id = await _mediator.Send(new AddVisitNoteCommand(dto, RequestingAuth0UserId), cancellationToken);
+        var id = await _visitNotesAppService.AddVisitNoteAsync(dto, cancellationToken);
         return CreatedAtAction(nameof(GetVisitNotes), new { visitId = dto.VisitId }, id);
     }
 }

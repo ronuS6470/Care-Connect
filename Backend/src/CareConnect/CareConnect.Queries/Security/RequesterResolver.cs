@@ -1,5 +1,5 @@
 using System.Data;
-using CareConnect.DTOs.Errors;
+using CareConnect.Infrastructure.Errors;
 using Dapper;
 
 namespace CareConnect.Queries.Security;

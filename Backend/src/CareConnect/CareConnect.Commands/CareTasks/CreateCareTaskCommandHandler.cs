@@ -1,41 +1,37 @@
-using CareConnect.DTOs.Errors;
+using AutoMapper;
 using CareConnect.Infrastructure.Entities;
-using CareConnect.Infrastructure.Persistence;
+using CareConnect.Infrastructure.Errors;
+using CareConnect.Infrastructure.Repositories.CareTasks;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace CareConnect.Commands.CareTasks;
 
 public sealed class CreateCareTaskCommandHandler : IRequestHandler<CreateCareTaskCommand, int>
 {
-    private readonly CareConnectDbContext _dbContext;
+    private readonly ICareTaskRepository _repository;
+    private readonly IMapper _mapper;
 
-    public CreateCareTaskCommandHandler(CareConnectDbContext dbContext)
+    public CreateCareTaskCommandHandler(ICareTaskRepository repository, IMapper mapper)
     {
-        _dbContext = dbContext;
+        _repository = repository;
+        _mapper = mapper;
     }
 
     public async Task<int> Handle(CreateCareTaskCommand request, CancellationToken cancellationToken)
     {
         var dto = request.CareTask;
 
-        var nameAlreadyExists = await _dbContext.CareTasks
-            .AnyAsync(t => t.Name == dto.Name, cancellationToken);
+        var nameAlreadyExists = await _repository.ExistsWithNameAsync(dto.Name, excludingId: null, cancellationToken);
 
         if (nameAlreadyExists)
         {
-            throw new BusinessRuleViolationException($"A care task named '{dto.Name}' already exists.");
+            throw new ConflictException($"A care task named '{dto.Name}' already exists.");
         }
 
-        var careTask = new CareTask
-        {
-            Name = dto.Name,
-            Description = dto.Description,
-            IsActive = true,
-        };
+        var careTask = _mapper.Map<CareTask>(dto);
 
-        _dbContext.CareTasks.Add(careTask);
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        _repository.Add(careTask);
+        await _repository.SaveChangesAsync(cancellationToken);
 
         return careTask.Id;
     }

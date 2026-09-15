@@ -1,27 +1,24 @@
-using CareConnect.DTOs.Errors;
-using CareConnect.Infrastructure.Persistence;
+using CareConnect.Infrastructure.Errors;
+using CareConnect.Infrastructure.Repositories.CareTasks;
 using MediatR;
-using Microsoft.EntityFrameworkCore;
 
 namespace CareConnect.Commands.CareTasks;
 
 public sealed class DeleteCareTaskCommandHandler : IRequestHandler<DeleteCareTaskCommand>
 {
-    private readonly CareConnectDbContext _dbContext;
+    private readonly ICareTaskRepository _repository;
 
-    public DeleteCareTaskCommandHandler(CareConnectDbContext dbContext)
+    public DeleteCareTaskCommandHandler(ICareTaskRepository repository)
     {
-        _dbContext = dbContext;
+        _repository = repository;
     }
 
     public async Task Handle(DeleteCareTaskCommand request, CancellationToken cancellationToken)
     {
-        var careTask = await _dbContext.CareTasks
-            .FirstOrDefaultAsync(t => t.Id == request.CareTaskId, cancellationToken)
+        var careTask = await _repository.GetByIdAsync(request.CareTaskId, cancellationToken)
             ?? throw new NotFoundException($"Care task {request.CareTaskId} was not found.");
 
-        var isReferencedByVisitTasks = await _dbContext.VisitTasks
-            .AnyAsync(vt => vt.CareTaskId == request.CareTaskId, cancellationToken);
+        var isReferencedByVisitTasks = await _repository.IsReferencedByVisitTaskAsync(request.CareTaskId, cancellationToken);
 
         if (isReferencedByVisitTasks)
         {
@@ -31,9 +28,9 @@ public sealed class DeleteCareTaskCommandHandler : IRequestHandler<DeleteCareTas
         }
         else
         {
-            _dbContext.CareTasks.Remove(careTask);
+            _repository.Remove(careTask);
         }
 
-        await _dbContext.SaveChangesAsync(cancellationToken);
+        await _repository.SaveChangesAsync(cancellationToken);
     }
 }

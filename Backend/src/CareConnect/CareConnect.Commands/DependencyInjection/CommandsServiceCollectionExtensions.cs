@@ -12,6 +12,7 @@ public static class CommandsServiceCollectionExtensions
     {
         services.AddValidatorsFromAssembly(typeof(CommandsAssemblyMarker).Assembly);
         services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
+        services.AddAutoMapper(typeof(CommandsAssemblyMarker).Assembly);
 
         return services;
     }

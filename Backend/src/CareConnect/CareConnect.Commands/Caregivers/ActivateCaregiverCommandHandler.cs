@@ -1,17 +1,17 @@
-using CareConnect.AppServices.Caregivers;
+using CareConnect.Infrastructure.Repositories.Caregivers;
 using MediatR;
 
 namespace CareConnect.Commands.Caregivers;
 
 public sealed class ActivateCaregiverCommandHandler : IRequestHandler<ActivateCaregiverCommand>
 {
-    private readonly ICaregiverActivationService _activationService;
+    private readonly ICaregiverRepository _repository;
 
-    public ActivateCaregiverCommandHandler(ICaregiverActivationService activationService)
+    public ActivateCaregiverCommandHandler(ICaregiverRepository repository)
     {
-        _activationService = activationService;
+        _repository = repository;
     }
 
     public Task Handle(ActivateCaregiverCommand request, CancellationToken cancellationToken) =>
-        _activationService.SetActiveStatusAsync(request.CaregiverId, isActive: true, cancellationToken);
+        _repository.SetActiveStatusAsync(request.CaregiverId, isActive: true, cancellationToken);
 }

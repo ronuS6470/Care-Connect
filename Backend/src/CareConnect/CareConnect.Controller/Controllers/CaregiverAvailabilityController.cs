@@ -1,8 +1,6 @@
-using CareConnect.Commands.Availability;
+using CareConnect.AppServices.CaregiverAvailability;
 using CareConnect.DTOs.Caregivers;
 using CareConnect.DTOs.Enums;
-using CareConnect.Queries.Availability;
-using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,11 +11,11 @@ namespace CareConnect.Controller.Controllers;
 [Authorize]
 public sealed class CaregiverAvailabilityController : ControllerBase
 {
-    private readonly IMediator _mediator;
+    private readonly ICaregiverAvailabilityAppService _caregiverAvailabilityAppService;
 
-    public CaregiverAvailabilityController(IMediator mediator)
+    public CaregiverAvailabilityController(ICaregiverAvailabilityAppService caregiverAvailabilityAppService)
     {
-        _mediator = mediator;
+        _caregiverAvailabilityAppService = caregiverAvailabilityAppService;
     }
 
     [HttpGet]
@@ -25,7 +23,7 @@ public sealed class CaregiverAvailabilityController : ControllerBase
         [FromQuery] int caregiverId,
         CancellationToken cancellationToken)
     {
-        var result = await _mediator.Send(new GetCaregiverAvailabilityQuery(caregiverId), cancellationToken);
+        var result = await _caregiverAvailabilityAppService.GetCaregiverAvailabilityAsync(caregiverId, cancellationToken);
         return Ok(result);
     }
 
@@ -35,7 +33,7 @@ public sealed class CaregiverAvailabilityController : ControllerBase
         [FromBody] CreateCaregiverAvailabilityDto dto,
         CancellationToken cancellationToken)
     {
-        var id = await _mediator.Send(new CreateAvailabilityCommand(dto), cancellationToken);
+        var id = await _caregiverAvailabilityAppService.CreateAvailabilityAsync(dto, cancellationToken);
         return CreatedAtAction(nameof(GetCaregiverAvailability), new { caregiverId = dto.CaregiverId }, id);
     }
 
@@ -46,7 +44,7 @@ public sealed class CaregiverAvailabilityController : ControllerBase
         [FromBody] UpdateCaregiverAvailabilityDto dto,
         CancellationToken cancellationToken)
     {
-        await _mediator.Send(new UpdateAvailabilityCommand(id, dto), cancellationToken);
+        await _caregiverAvailabilityAppService.UpdateAvailabilityAsync(id, dto, cancellationToken);
         return NoContent();
     }
 
@@ -54,7 +52,7 @@ public sealed class CaregiverAvailabilityController : ControllerBase
     [Authorize(Roles = nameof(UserRole.Admin))]
     public async Task<IActionResult> DeleteAvailability(int id, CancellationToken cancellationToken)
     {
-        await _mediator.Send(new DeleteAvailabilityCommand(id), cancellationToken);
+        await _caregiverAvailabilityAppService.DeleteAvailabilityAsync(id, cancellationToken);
         return NoContent();
     }
 }
