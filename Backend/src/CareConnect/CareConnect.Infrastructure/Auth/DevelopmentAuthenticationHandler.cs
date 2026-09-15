@@ -8,8 +8,8 @@ using Microsoft.Extensions.Options;
 namespace CareConnect.Infrastructure.Auth;
 
 /// <summary>
-/// Stands in for real Auth0 JWT validation during local testing (Postman, etc.) when explicitly
-/// enabled via Auth0:BypassForLocalTesting — gated in <c>InfrastructureServiceCollectionExtensions</c>
+/// Stands in for real JWT validation during local testing (Postman, etc.) when explicitly
+/// enabled via Jwt:BypassForLocalTesting — gated in <c>InfrastructureServiceCollectionExtensions</c>
 /// to require both this flag AND a Development environment, so it can never activate elsewhere.
 ///
 /// Every request authenticates automatically. The caller picks who they are via two optional
