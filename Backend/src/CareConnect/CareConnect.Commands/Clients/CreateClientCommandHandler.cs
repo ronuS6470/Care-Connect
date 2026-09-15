@@ -24,21 +24,21 @@ public sealed class CreateClientCommandHandler : IRequestHandler<CreateClientCom
 
         if (user.Role != UserRole.Client)
         {
-            throw new BusinessRuleViolationException("The linked user's role must be Client.");
+            throw new BusinessRuleException("The linked user's role must be Client.");
         }
 
         var emailAlreadyUsedByAnotherUser = await _repository.IsEmailUsedByAnotherUserAsync(user.Id, user.Email, cancellationToken);
 
         if (emailAlreadyUsedByAnotherUser)
         {
-            throw new BusinessRuleViolationException("Email must be unique.");
+            throw new ConflictException("Email must be unique.");
         }
 
         var alreadyHasClientProfile = await _repository.ExistsForUserAsync(dto.UserId, cancellationToken);
 
         if (alreadyHasClientProfile)
         {
-            throw new BusinessRuleViolationException($"User {dto.UserId} already has a client profile.");
+            throw new ConflictException($"User {dto.UserId} already has a client profile.");
         }
 
         var client = new Client

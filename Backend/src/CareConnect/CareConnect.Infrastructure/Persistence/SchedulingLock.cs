@@ -69,7 +69,7 @@ public static class SchedulingLock
         // cancellation, or deadlock victim.
         if (result < 0)
         {
-            throw new BusinessRuleViolationException(
+            throw new BusinessRuleException(
                 "Could not acquire the scheduling lock for this caregiver in time; please retry.");
         }
     }

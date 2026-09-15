@@ -9,7 +9,7 @@ public interface IVisitRepository
     /// scheduling-rule checks internally — callers must NOT wrap this in their own transaction or
     /// call the lock themselves, since the lock only serializes correctly when it, the checks, and
     /// the write all share one connection/transaction. Throws NotFoundException /
-    /// BusinessRuleViolationException on the same conditions as before this was a repository method.
+    /// BusinessRuleException on the same conditions as before this was a repository method.
     /// </summary>
     Task<int> CreateScheduledVisitAsync(
         int caregiverAssignmentId,

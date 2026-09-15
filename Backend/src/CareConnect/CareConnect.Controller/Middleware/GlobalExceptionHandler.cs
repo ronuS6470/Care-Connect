@@ -1,28 +1,28 @@
+using CareConnect.DTOs.Common;
 using CareConnect.Infrastructure.Errors;
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 
 namespace CareConnect.Controller.Middleware;
 
 /// <summary>
-/// Single place that turns exceptions into HTTP responses: FluentValidation failures become a
-/// clean 400, NotFoundException becomes 404, ForbiddenException becomes 403,
-/// BusinessRuleViolationException becomes 409, and everything else becomes a generic 500 — the
-/// real exception (message, stack trace, connection strings, SQL text, ...) is logged, never
-/// returned to the caller. All responses are written as RFC 7807 ProblemDetails via the
-/// framework's IProblemDetailsService.
+/// Single place that turns exceptions into HTTP responses, for every controller in the API.
+/// FluentValidation failures become a clean 400, NotFoundException becomes 404, ForbiddenException
+/// becomes 403, ConflictException/BusinessRuleException become 409, and everything else becomes a
+/// generic 500. In every case the response body is the project's standard envelope
+/// (<see cref="ApiResponse{T}"/> with Data omitted) — never a stack trace, SQL text, connection
+/// string, or raw exception detail. The real exception is always logged server-side first.
 /// </summary>
 public sealed partial class GlobalExceptionHandler : IExceptionHandler
 {
-    private readonly ILogger<GlobalExceptionHandler> _logger;
-    private readonly IProblemDetailsService _problemDetailsService;
+    private const string UnexpectedErrorMessage = "An unexpected error occurred. Please try again later.";
 
-    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger, IProblemDetailsService problemDetailsService)
+    private readonly ILogger<GlobalExceptionHandler> _logger;
+
+    public GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger)
     {
         _logger = logger;
-        _problemDetailsService = problemDetailsService;
     }
 
     public async ValueTask<bool> TryHandleAsync(
@@ -30,61 +30,50 @@ public sealed partial class GlobalExceptionHandler : IExceptionHandler
         Exception exception,
         CancellationToken cancellationToken)
     {
-        var (statusCode, problemDetails) = exception switch
+        var (statusCode, response) = exception switch
         {
             ValidationException validationException => HandleValidationException(validationException),
-            NotFoundException notFoundException => HandleKnownException(notFoundException, StatusCodes.Status404NotFound, "Not Found"),
-            ForbiddenException forbiddenException => HandleKnownException(forbiddenException, StatusCodes.Status403Forbidden, "Forbidden"),
-            BusinessRuleViolationException businessRuleException => HandleKnownException(businessRuleException, StatusCodes.Status409Conflict, "Conflict"),
+            NotFoundException notFoundException => HandleKnownException(notFoundException, StatusCodes.Status404NotFound),
+            ForbiddenException forbiddenException => HandleKnownException(forbiddenException, StatusCodes.Status403Forbidden),
+            ConflictException conflictException => HandleKnownException(conflictException, StatusCodes.Status409Conflict),
+            BusinessRuleException businessRuleException => HandleKnownException(businessRuleException, StatusCodes.Status409Conflict),
             _ => HandleUnexpectedException(exception, httpContext),
         };
 
         httpContext.Response.StatusCode = statusCode;
+        httpContext.Response.ContentType = "application/json";
 
-        return await _problemDetailsService.TryWriteAsync(new ProblemDetailsContext
-        {
-            HttpContext = httpContext,
-            Exception = exception,
-            ProblemDetails = problemDetails,
-        });
+        await httpContext.Response.WriteAsJsonAsync(response, cancellationToken);
+
+        return true;
     }
 
-    private (int StatusCode, ProblemDetails ProblemDetails) HandleValidationException(ValidationException exception)
+    private (int StatusCode, ApiResponse<object> Response) HandleValidationException(ValidationException exception)
     {
         var errors = exception.Errors
-            .GroupBy(failure => failure.PropertyName)
-            .ToDictionary(group => group.Key, group => group.Select(failure => failure.ErrorMessage).ToArray());
+            .Select(failure => $"{failure.PropertyName}: {failure.ErrorMessage}")
+            .ToArray();
 
-        LogValidationFailed(exception.Errors.Count());
+        LogValidationFailed(errors.Length);
 
-        return (StatusCodes.Status400BadRequest, new HttpValidationProblemDetails(errors)
-        {
-            Title = "Validation failed.",
-            Status = StatusCodes.Status400BadRequest,
-        });
+        return (StatusCodes.Status400BadRequest, ApiResponse<object>.Fail("Validation failed.", errors));
     }
 
-    private (int StatusCode, ProblemDetails ProblemDetails) HandleKnownException(Exception exception, int statusCode, string title)
+    private (int StatusCode, ApiResponse<object> Response) HandleKnownException(Exception exception, int statusCode)
     {
         LogKnownException(exception.GetType().Name, exception.Message);
 
-        return (statusCode, new ProblemDetails
-        {
-            Title = title,
-            Detail = exception.Message,
-            Status = statusCode,
-        });
+        return (statusCode, ApiResponse<object>.Fail(exception.Message));
     }
 
-    private (int StatusCode, ProblemDetails ProblemDetails) HandleUnexpectedException(Exception exception, HttpContext httpContext)
+    private (int StatusCode, ApiResponse<object> Response) HandleUnexpectedException(Exception exception, HttpContext httpContext)
     {
+        // Full exception (message, stack trace, and anything it wraps — e.g. raw SQL error text
+        // or a connection string embedded in a SqlException) is logged here only. The caller only
+        // ever sees UnexpectedErrorMessage below.
         LogUnhandledException(exception, httpContext.Request.Path.Value ?? string.Empty);
 
-        return (StatusCodes.Status500InternalServerError, new ProblemDetails
-        {
-            Title = "An unexpected error occurred.",
-            Status = StatusCodes.Status500InternalServerError,
-        });
+        return (StatusCodes.Status500InternalServerError, ApiResponse<object>.Fail(UnexpectedErrorMessage));
     }
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Request failed validation with {ErrorCount} error(s).")]

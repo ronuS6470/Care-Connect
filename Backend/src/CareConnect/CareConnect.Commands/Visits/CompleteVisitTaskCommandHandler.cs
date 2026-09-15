@@ -31,7 +31,7 @@ public sealed class CompleteVisitTaskCommandHandler : IRequestHandler<CompleteVi
 
         if (task.IsCompleted)
         {
-            throw new BusinessRuleViolationException("This task is already marked complete.");
+            throw new BusinessRuleException("This task is already marked complete.");
         }
 
         var now = DateTime.UtcNow;

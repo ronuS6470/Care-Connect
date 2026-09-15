@@ -24,21 +24,21 @@ public sealed class CreateCaregiverCommandHandler : IRequestHandler<CreateCaregi
 
         if (user.Role != UserRole.Caregiver)
         {
-            throw new BusinessRuleViolationException("The linked user's role must be Caregiver.");
+            throw new BusinessRuleException("The linked user's role must be Caregiver.");
         }
 
         var emailAlreadyUsedByAnotherUser = await _repository.IsEmailUsedByAnotherUserAsync(user.Id, user.Email, cancellationToken);
 
         if (emailAlreadyUsedByAnotherUser)
         {
-            throw new BusinessRuleViolationException("Email must be unique.");
+            throw new ConflictException("Email must be unique.");
         }
 
         var alreadyHasCaregiverProfile = await _repository.ExistsForUserAsync(dto.UserId, cancellationToken);
 
         if (alreadyHasCaregiverProfile)
         {
-            throw new BusinessRuleViolationException($"User {dto.UserId} already has a caregiver profile.");
+            throw new ConflictException($"User {dto.UserId} already has a caregiver profile.");
         }
 
         var caregiver = new Caregiver

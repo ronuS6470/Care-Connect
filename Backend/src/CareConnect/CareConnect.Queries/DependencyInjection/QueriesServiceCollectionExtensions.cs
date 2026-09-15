@@ -3,6 +3,9 @@ using CareConnect.Queries.Availability.Repositories;
 using CareConnect.Queries.Caregivers.Repositories;
 using CareConnect.Queries.CareTasks.Repositories;
 using CareConnect.Queries.Clients.Repositories;
+using CareConnect.Queries.Dashboards.Repositories;
+using CareConnect.Queries.Reporting.Repositories;
+using CareConnect.Queries.Reports.Repositories;
 using CareConnect.Queries.Visits.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -20,6 +23,9 @@ public static class QueriesServiceCollectionExtensions
         services.AddScoped<ICaregiverReadRepository, CaregiverDapperRepository>();
         services.AddScoped<IAssignmentReadRepository, AssignmentDapperRepository>();
         services.AddScoped<IVisitReadRepository, VisitDapperRepository>();
+        services.AddScoped<ICaregiverEarningsReadRepository, CaregiverEarningsDapperRepository>();
+        services.AddScoped<IDashboardReadRepository, DashboardDapperRepository>();
+        services.AddScoped<IReportsReadRepository, ReportsDapperRepository>();
 
         return services;
     }

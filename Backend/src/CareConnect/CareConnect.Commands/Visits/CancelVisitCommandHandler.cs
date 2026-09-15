@@ -21,7 +21,7 @@ public sealed class CancelVisitCommandHandler : IRequestHandler<CancelVisitComma
 
         if (visit.Status is VisitStatus.Cancelled or VisitStatus.Completed)
         {
-            throw new BusinessRuleViolationException($"A visit with status {visit.Status} cannot be cancelled.");
+            throw new BusinessRuleException($"A visit with status {visit.Status} cannot be cancelled.");
         }
 
         visit.Status = VisitStatus.Cancelled;

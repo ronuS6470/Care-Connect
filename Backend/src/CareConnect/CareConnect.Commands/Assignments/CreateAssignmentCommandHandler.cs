@@ -36,12 +36,12 @@ public sealed class CreateAssignmentCommandHandler : IRequestHandler<CreateAssig
 
         if (!caregiver.IsActive)
         {
-            throw new BusinessRuleViolationException("Caregiver is not active.");
+            throw new BusinessRuleException("Caregiver is not active.");
         }
 
         if (!client.IsActive)
         {
-            throw new BusinessRuleViolationException("Client is not active.");
+            throw new BusinessRuleException("Client is not active.");
         }
 
         var hasActiveAssignment = await _assignmentRepository.ExistsActiveAssignmentAsync(
@@ -49,7 +49,7 @@ public sealed class CreateAssignmentCommandHandler : IRequestHandler<CreateAssig
 
         if (hasActiveAssignment)
         {
-            throw new BusinessRuleViolationException("This caregiver already has an active assignment with this client.");
+            throw new ConflictException("This caregiver already has an active assignment with this client.");
         }
 
         var assignment = new CaregiverAssignment

@@ -21,7 +21,7 @@ public sealed class CancelAssignmentCommandHandler : IRequestHandler<CancelAssig
 
         if (assignment.Status == AssignmentStatus.Cancelled)
         {
-            throw new BusinessRuleViolationException("This assignment is already cancelled.");
+            throw new ConflictException("This assignment is already cancelled.");
         }
 
         assignment.Status = AssignmentStatus.Cancelled;

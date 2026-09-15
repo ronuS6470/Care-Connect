@@ -26,7 +26,7 @@ public sealed class CheckInVisitCommandHandler : IRequestHandler<CheckInVisitCom
 
         if (visit.Status != VisitStatus.Scheduled)
         {
-            throw new BusinessRuleViolationException(
+            throw new BusinessRuleException(
                 $"Cannot check in: visit status is {visit.Status}, not Scheduled.");
         }
 
@@ -35,7 +35,7 @@ public sealed class CheckInVisitCommandHandler : IRequestHandler<CheckInVisitCom
 
         if (now < earliestAllowed)
         {
-            throw new BusinessRuleViolationException(
+            throw new BusinessRuleException(
                 $"Check-in is only allowed within {VisitExecutionPolicy.CheckInEarlyGraceMinutes} minutes of the scheduled start time.");
         }
 

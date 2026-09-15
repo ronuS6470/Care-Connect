@@ -10,7 +10,7 @@ internal static class VisitTaskLookup
     {
         if (visit.Status is VisitStatus.Completed or VisitStatus.Cancelled or VisitStatus.NoShow)
         {
-            throw new BusinessRuleViolationException($"Cannot modify tasks on a visit with status {visit.Status}.");
+            throw new BusinessRuleException($"Cannot modify tasks on a visit with status {visit.Status}.");
         }
     }
 }

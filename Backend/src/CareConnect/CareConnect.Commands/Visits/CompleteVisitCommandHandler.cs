@@ -29,18 +29,18 @@ public sealed class CompleteVisitCommandHandler : IRequestHandler<CompleteVisitC
         // Scheduled, so it fails this check before either of the two below is even reached.
         if (visit.Status != VisitStatus.InProgress)
         {
-            throw new BusinessRuleViolationException(
+            throw new BusinessRuleException(
                 $"Cannot complete: visit status is {visit.Status}, not InProgress.");
         }
 
         if (visit.ActualStartUtc is null)
         {
-            throw new BusinessRuleViolationException("This visit has no recorded check-in time.");
+            throw new BusinessRuleException("This visit has no recorded check-in time.");
         }
 
         if (visit.ActualEndUtc is null)
         {
-            throw new BusinessRuleViolationException("The visit must be checked out before it can be completed.");
+            throw new BusinessRuleException("The visit must be checked out before it can be completed.");
         }
 
         var incompleteTasks = visit.VisitTasks.Where(t => !t.IsCompleted).ToList();
@@ -49,7 +49,7 @@ public sealed class CompleteVisitCommandHandler : IRequestHandler<CompleteVisitC
         {
             if (string.IsNullOrWhiteSpace(request.Completion.IncompleteTasksReason))
             {
-                throw new BusinessRuleViolationException(
+                throw new BusinessRuleException(
                     $"{incompleteTasks.Count} visit task(s) are incomplete. Provide IncompleteTasksReason to complete anyway.");
             }
 

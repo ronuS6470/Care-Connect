@@ -24,7 +24,7 @@ public sealed class UpdateAssignmentCommandHandler : IRequestHandler<UpdateAssig
         // command's payload has no StartDate to compare against (only the stored assignment does).
         if (dto.EndDate.HasValue && dto.EndDate.Value < assignment.StartDate)
         {
-            throw new BusinessRuleViolationException("EndDate must be on or after the assignment's StartDate.");
+            throw new BusinessRuleException("EndDate must be on or after the assignment's StartDate.");
         }
 
         assignment.Status = dto.Status;

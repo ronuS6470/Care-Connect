@@ -25,7 +25,7 @@ public sealed class CreateCareTaskCommandHandler : IRequestHandler<CreateCareTas
 
         if (nameAlreadyExists)
         {
-            throw new BusinessRuleViolationException($"A care task named '{dto.Name}' already exists.");
+            throw new ConflictException($"A care task named '{dto.Name}' already exists.");
         }
 
         var careTask = _mapper.Map<CareTask>(dto);

@@ -70,7 +70,7 @@ public sealed class VisitRepository : IVisitRepository
 
             if (visit.Status != VisitStatus.Scheduled)
             {
-                throw new BusinessRuleViolationException(
+                throw new BusinessRuleException(
                     $"A visit with status {visit.Status} cannot be rescheduled.");
             }
 
@@ -138,12 +138,12 @@ public sealed class VisitRepository : IVisitRepository
     {
         if (assignment.Status != AssignmentStatus.Active)
         {
-            throw new BusinessRuleViolationException("The assignment must be active to schedule a visit against it.");
+            throw new BusinessRuleException("The assignment must be active to schedule a visit against it.");
         }
 
         if (visitDate < assignment.StartDate || (assignment.EndDate.HasValue && visitDate > assignment.EndDate.Value))
         {
-            throw new BusinessRuleViolationException("The assignment is not active for the visit's date.");
+            throw new BusinessRuleException("The assignment is not active for the visit's date.");
         }
     }
 
@@ -168,7 +168,7 @@ public sealed class VisitRepository : IVisitRepository
 
         if (!fitsWithinAWindow)
         {
-            throw new BusinessRuleViolationException(
+            throw new BusinessRuleException(
                 "The visit falls outside the caregiver's configured availability for that day.");
         }
     }
@@ -191,7 +191,7 @@ public sealed class VisitRepository : IVisitRepository
 
         if (hasOverlap)
         {
-            throw new BusinessRuleViolationException("This caregiver already has an overlapping visit.");
+            throw new ConflictException("Caregiver is already booked during this time.");
         }
     }
 }

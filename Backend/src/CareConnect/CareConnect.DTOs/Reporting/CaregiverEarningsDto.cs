@@ -17,4 +17,7 @@ public sealed class CaregiverEarningsDto
     public required decimal TotalEarnings { get; init; }
 
     public required int CompletedVisitCount { get; init; }
+
+    /// <summary>Per-visit breakdown — only populated when the caller asked for it; null otherwise.</summary>
+    public IReadOnlyList<CaregiverEarningsVisitDto>? Visits { get; init; }
 }

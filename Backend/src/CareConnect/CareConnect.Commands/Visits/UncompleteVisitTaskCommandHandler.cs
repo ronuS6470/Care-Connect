@@ -34,7 +34,7 @@ public sealed class UncompleteVisitTaskCommandHandler : IRequestHandler<Uncomple
 
         if (!task.IsCompleted)
         {
-            throw new BusinessRuleViolationException("This task is not marked complete.");
+            throw new BusinessRuleException("This task is not marked complete.");
         }
 
         task.IsCompleted = false;

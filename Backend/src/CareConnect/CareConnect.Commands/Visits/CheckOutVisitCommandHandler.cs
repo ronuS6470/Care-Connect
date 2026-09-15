@@ -26,25 +26,25 @@ public sealed class CheckOutVisitCommandHandler : IRequestHandler<CheckOutVisitC
 
         if (visit.Status != VisitStatus.InProgress)
         {
-            throw new BusinessRuleViolationException(
+            throw new BusinessRuleException(
                 $"Cannot check out: visit status is {visit.Status}, not InProgress.");
         }
 
         if (visit.ActualStartUtc is null)
         {
-            throw new BusinessRuleViolationException("This visit has no recorded check-in time.");
+            throw new BusinessRuleException("This visit has no recorded check-in time.");
         }
 
         if (visit.ActualEndUtc is not null)
         {
-            throw new BusinessRuleViolationException("This visit has already been checked out.");
+            throw new BusinessRuleException("This visit has already been checked out.");
         }
 
         var now = DateTime.UtcNow;
 
         if (now <= visit.ActualStartUtc.Value)
         {
-            throw new BusinessRuleViolationException("Check-out time must be after check-in time.");
+            throw new BusinessRuleException("Check-out time must be after check-in time.");
         }
 
         visit.ActualEndUtc = now;

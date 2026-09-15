@@ -26,7 +26,7 @@ public sealed class CreateAvailabilityCommandHandler : IRequestHandler<CreateAva
 
         if (hasOverlap)
         {
-            throw new BusinessRuleViolationException(
+            throw new ConflictException(
                 "This availability period overlaps with an existing one for that caregiver and day.");
         }
 

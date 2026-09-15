@@ -3,6 +3,8 @@ using CareConnect.AppServices.CaregiverAvailability;
 using CareConnect.AppServices.Caregivers;
 using CareConnect.AppServices.CareTasks;
 using CareConnect.AppServices.Clients;
+using CareConnect.AppServices.Dashboards;
+using CareConnect.AppServices.Reporting;
 using CareConnect.AppServices.Security;
 using CareConnect.AppServices.Visits;
 using Microsoft.Extensions.DependencyInjection;
@@ -24,6 +26,8 @@ public static class AppServicesServiceCollectionExtensions
         services.AddScoped<IAssignmentsAppService, AssignmentsAppService>();
         services.AddScoped<IVisitsAppService, VisitsAppService>();
         services.AddScoped<IVisitNotesAppService, VisitNotesAppService>();
+        services.AddScoped<IReportingAppService, ReportingAppService>();
+        services.AddScoped<IDashboardAppService, DashboardAppService>();
 
         return services;
     }
