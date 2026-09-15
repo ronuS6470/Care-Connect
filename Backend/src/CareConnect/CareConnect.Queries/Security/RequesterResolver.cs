@@ -1,5 +1,6 @@
 using System.Data;
 using CareConnect.Infrastructure.Errors;
+using CareConnect.Queries.Common;
 using Dapper;
 
 namespace CareConnect.Queries.Security;
@@ -11,13 +12,8 @@ namespace CareConnect.Queries.Security;
 /// </summary>
 public static class RequesterResolver
 {
-    private const string Sql = """
-        SELECT u.Id AS UserId, u.Role, cl.Id AS ClientId, cg.Id AS CaregiverId
-        FROM Users u
-        LEFT JOIN Clients cl ON cl.UserId = u.Id
-        LEFT JOIN Caregivers cg ON cg.UserId = u.Id
-        WHERE u.Auth0UserId = @Auth0UserId;
-        """;
+    private static readonly string Sql =
+        SqlResourceLoader.Load(typeof(RequesterResolver), "ResolveRequesterQuery.sql");
 
     public static async Task<RequesterContext> ResolveAsync(
         IDbConnection connection,

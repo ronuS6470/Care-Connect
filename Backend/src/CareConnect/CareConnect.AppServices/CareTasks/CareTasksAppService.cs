@@ -1,7 +1,8 @@
 using CareConnect.Commands.CareTasks;
 using CareConnect.DTOs.CareTasks;
 using CareConnect.DTOs.Common;
-using CareConnect.Queries.CareTasks;
+using CareConnect.Queries.CareTasks.GetCareTaskById;
+using CareConnect.Queries.CareTasks.GetCareTasks;
 using MediatR;
 
 namespace CareConnect.AppServices.CareTasks;

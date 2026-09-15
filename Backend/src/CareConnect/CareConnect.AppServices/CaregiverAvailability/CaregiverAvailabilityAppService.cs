@@ -1,6 +1,6 @@
 using CareConnect.Commands.Availability;
 using CareConnect.DTOs.Caregivers;
-using CareConnect.Queries.Availability;
+using CareConnect.Queries.Availability.GetCaregiverAvailability;
 using MediatR;
 
 namespace CareConnect.AppServices.CaregiverAvailability;

@@ -3,7 +3,8 @@ using CareConnect.Commands.Assignments;
 using CareConnect.DTOs.Assignments;
 using CareConnect.DTOs.Common;
 using CareConnect.DTOs.Enums;
-using CareConnect.Queries.Assignments;
+using CareConnect.Queries.Assignments.GetAssignmentById;
+using CareConnect.Queries.Assignments.GetAssignments;
 using MediatR;
 
 namespace CareConnect.AppServices.Assignments;

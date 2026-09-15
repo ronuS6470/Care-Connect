@@ -1,7 +1,8 @@
 using CareConnect.Commands.Caregivers;
 using CareConnect.DTOs.Caregivers;
 using CareConnect.DTOs.Common;
-using CareConnect.Queries.Caregivers;
+using CareConnect.Queries.Caregivers.GetCaregiverById;
+using CareConnect.Queries.Caregivers.GetCaregivers;
 using MediatR;
 
 namespace CareConnect.AppServices.Caregivers;

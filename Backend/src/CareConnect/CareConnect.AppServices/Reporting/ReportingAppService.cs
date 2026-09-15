@@ -1,8 +1,22 @@
 using CareConnect.AppServices.Security;
 using CareConnect.DTOs.Reporting;
 using CareConnect.DTOs.Reports;
-using CareConnect.Queries.Reporting;
-using CareConnect.Queries.Reports;
+using CareConnect.Queries.Reporting.GetCaregiverEarnings;
+using CareConnect.Queries.Reporting.GetCaregiverHours;
+using CareConnect.Queries.Reports.GetAverageVisitDurationReport;
+using CareConnect.Queries.Reports.GetCaregiverAvailabilityConflictsReport;
+using CareConnect.Queries.Reports.GetCaregiverTotalEarningsReport;
+using CareConnect.Queries.Reports.GetCaregiverTotalHoursReport;
+using CareConnect.Queries.Reports.GetCaregiversWithoutVisitsTodayReport;
+using CareConnect.Queries.Reports.GetClientsWithoutActiveCaregiverReport;
+using CareConnect.Queries.Reports.GetCompletedVisitsReport;
+using CareConnect.Queries.Reports.GetHighestEarningCaregiversReport;
+using CareConnect.Queries.Reports.GetMostRequestedCareTasksReport;
+using CareConnect.Queries.Reports.GetTodaysVisitsReport;
+using CareConnect.Queries.Reports.GetTopCaregiversByCompletedVisitsReport;
+using CareConnect.Queries.Reports.GetTopCaregiversByHoursReport;
+using CareConnect.Queries.Reports.GetVisitsPerCaregiverReport;
+using CareConnect.Queries.Reports.GetVisitsPerClientReport;
 using MediatR;
 
 namespace CareConnect.AppServices.Reporting;

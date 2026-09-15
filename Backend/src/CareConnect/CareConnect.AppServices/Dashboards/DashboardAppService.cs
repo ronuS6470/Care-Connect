@@ -1,6 +1,8 @@
 using CareConnect.AppServices.Security;
 using CareConnect.DTOs.Dashboards;
-using CareConnect.Queries.Dashboards;
+using CareConnect.Queries.Dashboards.GetAdminDashboard;
+using CareConnect.Queries.Dashboards.GetCaregiverDashboard;
+using CareConnect.Queries.Dashboards.GetClientDashboard;
 using MediatR;
 
 namespace CareConnect.AppServices.Dashboards;

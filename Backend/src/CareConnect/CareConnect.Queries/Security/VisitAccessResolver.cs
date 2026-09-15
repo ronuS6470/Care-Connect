@@ -1,6 +1,7 @@
 using System.Data;
 using CareConnect.DTOs.Enums;
 using CareConnect.Infrastructure.Errors;
+using CareConnect.Queries.Common;
 using Dapper;
 
 namespace CareConnect.Queries.Security;
@@ -12,12 +13,8 @@ namespace CareConnect.Queries.Security;
 /// </summary>
 public static class VisitAccessResolver
 {
-    private const string VisitOwnerSql = """
-        SELECT a.CaregiverId, a.ClientId
-        FROM Visits v
-        INNER JOIN CaregiverAssignments a ON a.Id = v.CaregiverAssignmentId
-        WHERE v.Id = @VisitId;
-        """;
+    private static readonly string VisitOwnerSql =
+        SqlResourceLoader.Load(typeof(VisitAccessResolver), "GetVisitOwnerQuery.sql");
 
     public static async Task<VisitOwnerRow> EnsureCanViewVisitAsync(
         IDbConnection connection,
