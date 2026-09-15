@@ -151,7 +151,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'reports',
         name: 'admin-reports',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/admin/ReportsPage.vue'),
         meta: { title: 'Reports', breadcrumb: [{ label: 'Reports' }] },
       },
     ],
@@ -175,19 +175,19 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'clients',
         name: 'caregiver-clients',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/caregiver/ClientsPage.vue'),
         meta: { title: 'My Clients', breadcrumb: [{ label: 'My Clients' }] },
       },
       {
         path: 'visits/today',
         name: 'caregiver-visits-today',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/caregiver/visits/TodaysVisitsPage.vue'),
         meta: { title: "Today's Visits", breadcrumb: [{ label: 'Visits' }, { label: 'Today' }] },
       },
       {
         path: 'visits/upcoming',
         name: 'caregiver-visits-upcoming',
-        component: () => import('@/pages/ComingSoonPage.vue'),
+        component: () => import('@/pages/caregiver/visits/UpcomingVisitsPage.vue'),
         meta: { title: 'Upcoming Visits', breadcrumb: [{ label: 'Visits' }, { label: 'Upcoming' }] },
       },
       {

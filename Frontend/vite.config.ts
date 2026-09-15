@@ -19,7 +19,7 @@ export default defineConfig({
     // directly, where CORS (or a reverse-proxy) is a deployment-time concern.
     proxy: {
       '/api': {
-        target: 'http://localhost:5099',
+        target: 'http://localhost:5035',
         changeOrigin: true,
       },
     },
