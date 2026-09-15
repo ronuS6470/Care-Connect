@@ -57,7 +57,7 @@ function onInput(event: Event) {
         :disabled="disabled"
         :required="required"
         :autocomplete="autocomplete"
-        :class="cn('input-base', error && 'input-error', $slots.leading && 'pl-9')"
+        :class="cn('input-base', error && 'input-error', $slots.leading && 'pl-9', $slots.trailing && 'pr-9')"
         :aria-invalid="!!error"
         :aria-describedby="error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined"
         @input="onInput"

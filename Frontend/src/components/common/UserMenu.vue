@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
 
 import { useClickOutside } from '@/composables/useClickOutside'
 import { useTheme } from '@/composables/useTheme'
@@ -10,7 +9,6 @@ import { initials } from '@/utils/string'
 
 const auth = useAuthStore()
 const { isDark, toggle } = useTheme()
-const router = useRouter()
 
 const open = ref(false)
 const menuRef = ref<HTMLElement | null>(null)
@@ -18,11 +16,6 @@ const menuRef = ref<HTMLElement | null>(null)
 useClickOutside(menuRef, () => {
   open.value = false
 })
-
-async function handleLogout() {
-  await auth.logout()
-  router.push('/login')
-}
 </script>
 
 <template>
@@ -34,11 +27,11 @@ async function handleLogout() {
       @click="open = !open"
     >
       <span class="flex h-8 w-8 items-center justify-center rounded-full bg-brand-700 text-xs font-semibold text-white">
-        {{ initials(auth.session?.displayName) }}
+        {{ initials(auth.fullName) }}
       </span>
       <span class="hidden text-left sm:block">
-        <span class="block text-sm font-medium leading-tight text-ink">{{ auth.session?.displayName ?? 'Guest' }}</span>
-        <span class="block text-xs leading-tight text-ink-muted">{{ auth.session ? USER_ROLE_LABELS[auth.session.role] : '' }}</span>
+        <span class="block text-sm font-medium leading-tight text-ink">{{ auth.fullName ?? 'Guest' }}</span>
+        <span class="block text-xs leading-tight text-ink-muted">{{ auth.role !== null ? USER_ROLE_LABELS[auth.role] : '' }}</span>
       </span>
     </button>
 
@@ -55,8 +48,8 @@ async function handleLogout() {
         class="absolute right-0 z-40 mt-2 w-56 origin-top-right rounded-xl border border-border bg-surface-elevated p-1.5 shadow-popover"
       >
         <div class="px-2.5 py-2 sm:hidden">
-          <p class="text-sm font-medium text-ink">{{ auth.session?.displayName ?? 'Guest' }}</p>
-          <p class="text-xs text-ink-muted">{{ auth.session?.email }}</p>
+          <p class="text-sm font-medium text-ink">{{ auth.fullName ?? 'Guest' }}</p>
+          <p class="text-xs text-ink-muted">{{ auth.email }}</p>
         </div>
 
         <button
@@ -81,7 +74,7 @@ async function handleLogout() {
         <button
           type="button"
           class="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-500/10"
-          @click="handleLogout"
+          @click="auth.logout()"
         >
           <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
             <path fill-rule="evenodd" d="M3 4.25A2.25 2.25 0 015.25 2h5.5A2.25 2.25 0 0113 4.25v2a.75.75 0 01-1.5 0v-2a.75.75 0 00-.75-.75h-5.5a.75.75 0 00-.75.75v11.5c0 .414.336.75.75.75h5.5a.75.75 0 00.75-.75v-2a.75.75 0 011.5 0v2A2.25 2.25 0 0110.75 18h-5.5A2.25 2.25 0 013 15.75V4.25z" clip-rule="evenodd" />

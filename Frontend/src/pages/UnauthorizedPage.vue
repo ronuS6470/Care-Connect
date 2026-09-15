@@ -9,7 +9,7 @@ const auth = useAuthStore()
 const router = useRouter()
 
 function goHome() {
-  router.push(auth.session ? ROLE_HOME_PATH[auth.session.role] : '/login')
+  router.push(auth.role !== null ? ROLE_HOME_PATH[auth.role] : '/login')
 }
 </script>
 

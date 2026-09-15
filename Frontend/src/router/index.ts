@@ -54,9 +54,10 @@ const routes: RouteRecordRaw[] = [
     ],
   },
   {
-    path: '/403',
-    name: 'forbidden',
-    component: () => import('@/pages/ForbiddenPage.vue'),
+    path: '/unauthorized',
+    name: 'unauthorized',
+    component: () => import('@/pages/UnauthorizedPage.vue'),
+    meta: { requiresAuth: true },
   },
   {
     path: '/:pathMatch(.*)*',
@@ -84,7 +85,7 @@ router.beforeEach((to) => {
 
   const allowedRoles = to.meta.roles as UserRole[] | undefined
   if (allowedRoles && auth.role !== null && !allowedRoles.includes(auth.role)) {
-    return '/403'
+    return '/unauthorized'
   }
 
   return true

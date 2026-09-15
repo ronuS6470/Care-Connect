@@ -24,11 +24,8 @@ export const http = axios.create({
 http.interceptors.request.use((config) => {
   const auth = useAuthStore()
 
-  if (auth.session) {
-    // Backend's local-testing bypass (CareConnect.Infrastructure.Auth.DevelopmentAuthenticationHandler).
-    // Swapping to real Auth0 later replaces this block with `Authorization: Bearer <token>`.
-    config.headers['X-Dev-Sub'] = auth.session.subject
-    config.headers['X-Dev-Role'] = auth.session.role
+  if (auth.token) {
+    config.headers.Authorization = `Bearer ${auth.token}`
   }
 
   return config
@@ -42,7 +39,14 @@ http.interceptors.response.use(
 
     if (status === 401) {
       const auth = useAuthStore()
-      auth.clearSession()
+
+      // Only a *session* becoming invalid (expired/revoked token on an authenticated request)
+      // triggers a forced logout + redirect. A 401 on the login/register call itself — bad
+      // credentials — leaves auth.token untouched and is handled by the caller as a normal form
+      // error, never a navigation.
+      if (auth.isAuthenticated) {
+        void auth.logout()
+      }
     }
 
     const message = body?.message ?? error.message ?? 'Something went wrong. Please try again.'
