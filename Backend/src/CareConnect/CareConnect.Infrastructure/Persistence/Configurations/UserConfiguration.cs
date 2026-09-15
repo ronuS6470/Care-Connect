@@ -21,6 +21,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsRequired()
             .HasMaxLength(256);
 
+        // Optional: rows created before local password sign-in existed have none.
+        builder.Property(u => u.PasswordHash)
+            .HasMaxLength(500);
+
         builder.Property(u => u.FirstName)
             .IsRequired()
             .HasMaxLength(100);

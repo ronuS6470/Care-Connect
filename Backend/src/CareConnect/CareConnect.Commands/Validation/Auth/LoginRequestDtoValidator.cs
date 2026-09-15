@@ -3,6 +3,11 @@ using FluentValidation;
 
 namespace CareConnect.Commands.Validation.Auth;
 
+/// <summary>
+/// Shape only — that an email is well-formed and a password was supplied at all. Whether the
+/// credentials are *correct* is decided in LoginCommandHandler, and is deliberately never
+/// reported at field level.
+/// </summary>
 public class LoginRequestDtoValidator : AbstractValidator<LoginRequestDto>
 {
     public LoginRequestDtoValidator()
@@ -10,9 +15,10 @@ public class LoginRequestDtoValidator : AbstractValidator<LoginRequestDto>
         RuleFor(x => x.Email)
             .NotEmpty()
             .EmailAddress()
-            .WithMessage("'{PropertyName}' must be a valid email address.");
+            .MaximumLength(256);
 
         RuleFor(x => x.Password)
-            .NotEmpty();
+            .NotEmpty()
+            .MaximumLength(128);
     }
 }

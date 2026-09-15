@@ -1,4 +1,5 @@
 using CareConnect.AppServices.Assignments;
+using CareConnect.AppServices.Auth;
 using CareConnect.AppServices.CaregiverAvailability;
 using CareConnect.AppServices.Caregivers;
 using CareConnect.AppServices.CareTasks;
@@ -19,6 +20,7 @@ public static class AppServicesServiceCollectionExtensions
         services.AddHttpContextAccessor();
         services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
 
+        services.AddScoped<IAuthAppService, AuthAppService>();
         services.AddScoped<ICareTasksAppService, CareTasksAppService>();
         services.AddScoped<ICaregiverAvailabilityAppService, CaregiverAvailabilityAppService>();
         services.AddScoped<IClientsAppService, ClientsAppService>();

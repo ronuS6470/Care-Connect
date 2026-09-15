@@ -8,6 +8,7 @@ using CareConnect.Infrastructure.Repositories.Availability;
 using CareConnect.Infrastructure.Repositories.Caregivers;
 using CareConnect.Infrastructure.Repositories.CareTasks;
 using CareConnect.Infrastructure.Repositories.Clients;
+using CareConnect.Infrastructure.Repositories.Users;
 using CareConnect.Infrastructure.Repositories.Visits;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -15,6 +16,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace CareConnect.Infrastructure.DependencyInjection;
 
@@ -26,9 +29,27 @@ public static class InfrastructureServiceCollectionExtensions
 
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration, bool isDevelopment)
     {
+        // This API is its own identity provider: it signs access tokens at /api/auth/login and
+        // validates those same tokens here, with one shared symmetric key.
+        var jwtOptions = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
+            ?? throw new InvalidOperationException(
+                $"Missing or invalid '{JwtOptions.SectionName}' configuration section.");
+
+        // HS256 needs >= 256 bits of key. Failing loudly at startup beats failing per-request.
+        if (Encoding.UTF8.GetByteCount(jwtOptions.SigningKey) < 32)
+        {
+            throw new InvalidOperationException(
+                $"'{JwtOptions.SectionName}:SigningKey' must be at least 32 bytes. Supply it via user-secrets, " +
+                "an environment variable, or a key vault — never a committed appsettings file outside development.");
+        }
+
+        services.AddSingleton(jwtOptions);
+        services.AddSingleton<IPasswordHasher, PasswordHasher>();
+        services.AddSingleton<IJwtTokenGenerator, JwtTokenGenerator>();
+
         // Double-gated: requires BOTH a Development environment AND this explicit opt-in, so a
         // stray config value can never bypass real auth outside local testing.
-        var bypassAuthForLocalTesting = isDevelopment && configuration.GetValue<bool>("Auth0:BypassForLocalTesting");
+        var bypassAuthForLocalTesting = isDevelopment && configuration.GetValue<bool>($"{JwtOptions.SectionName}:BypassForLocalTesting");
 
         var authenticationBuilder = services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme);
 
@@ -39,19 +60,32 @@ public static class InfrastructureServiceCollectionExtensions
         }
         else
         {
-            var auth0Options = configuration.GetSection(Auth0Options.SectionName).Get<Auth0Options>()
-                ?? throw new InvalidOperationException(
-                    $"Missing or invalid '{Auth0Options.SectionName}' configuration section.");
-
             authenticationBuilder.AddJwtBearer(options =>
             {
-                options.Authority = $"https://{auth0Options.Domain}/";
-                options.Audience = auth0Options.Audience;
-
-                // Keep claim types exactly as Auth0 issues them (e.g. "sub" stays "sub" instead of
-                // being remapped to the long ClaimTypes.NameIdentifier URI) — handlers resolve the
+                // Keep claim types exactly as issued (e.g. "sub" stays "sub" instead of being
+                // remapped to the long ClaimTypes.NameIdentifier URI) — handlers resolve the
                 // caller's local User by reading "sub" directly.
                 options.MapInboundClaims = false;
+
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidIssuer = jwtOptions.Issuer,
+                    ValidateAudience = true,
+                    ValidAudience = jwtOptions.Audience,
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
+                    ValidateLifetime = true,
+
+                    // Tokens are minted by this same process, so there is no cross-server drift to
+                    // absorb; the default five minutes would just extend every token's real life.
+                    ClockSkew = TimeSpan.FromSeconds(30),
+
+                    // Must match what JwtTokenGenerator writes: [Authorize(Roles = "...")] resolves
+                    // through RoleClaimType, and ICurrentUserAccessor reads "sub".
+                    NameClaimType = "sub",
+                    RoleClaimType = "role",
+                };
 
                 // Missing/invalid/expired bearer token (401) and a valid token that fails a
                 // [Authorize(Roles=...)] check (403) both short-circuit inside authentication/
@@ -108,6 +142,7 @@ public static class InfrastructureServiceCollectionExtensions
 
         services.AddSingleton<IDbConnectionFactory>(_ => new SqlConnectionFactory(connectionString));
 
+        services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ICareTaskRepository, CareTaskRepository>();
         services.AddScoped<ICaregiverAvailabilityRepository, CaregiverAvailabilityRepository>();
         services.AddScoped<IClientRepository, ClientRepository>();

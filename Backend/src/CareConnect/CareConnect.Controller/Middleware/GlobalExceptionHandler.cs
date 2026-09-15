@@ -8,7 +8,8 @@ namespace CareConnect.Controller.Middleware;
 
 /// <summary>
 /// Single place that turns exceptions into HTTP responses, for every controller in the API.
-/// FluentValidation failures become a clean 400, NotFoundException becomes 404, ForbiddenException
+/// FluentValidation failures become a clean 400, InvalidCredentialsException becomes 401,
+/// NotFoundException becomes 404, ForbiddenException
 /// becomes 403, ConflictException/BusinessRuleException become 409, and everything else becomes a
 /// generic 500. In every case the response body is the project's standard envelope
 /// (<see cref="ApiResponse{T}"/> with Data omitted) — never a stack trace, SQL text, connection
@@ -33,6 +34,7 @@ public sealed partial class GlobalExceptionHandler : IExceptionHandler
         var (statusCode, response) = exception switch
         {
             ValidationException validationException => HandleValidationException(validationException),
+            InvalidCredentialsException invalidCredentialsException => HandleKnownException(invalidCredentialsException, StatusCodes.Status401Unauthorized),
             NotFoundException notFoundException => HandleKnownException(notFoundException, StatusCodes.Status404NotFound),
             ForbiddenException forbiddenException => HandleKnownException(forbiddenException, StatusCodes.Status403Forbidden),
             ConflictException conflictException => HandleKnownException(conflictException, StatusCodes.Status409Conflict),
