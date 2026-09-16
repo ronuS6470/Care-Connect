@@ -23,6 +23,15 @@ export interface LoginRequest {
 }
 
 /**
+ * Mirrors CareConnect.DTOs.Auth.ChangePasswordDto — a user changing their own password. The target
+ * is always the caller, so there is no user id: the backend reads it from the token.
+ */
+export interface ChangePasswordRequest {
+  currentPassword: string
+  newPassword: string
+}
+
+/**
  * The raw response body from POST /api/auth/login, exactly as the backend sends it — this type
  * exists to describe that wire shape, not the app's internal user state (see AuthenticatedUser).
  */

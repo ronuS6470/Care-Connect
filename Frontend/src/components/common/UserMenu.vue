@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
+import ChangePasswordModal from '@/components/account/ChangePasswordModal.vue'
 import { useClickOutside } from '@/composables/useClickOutside'
 import { useTheme } from '@/composables/useTheme'
 import { useAuthStore } from '@/stores/auth'
@@ -11,7 +12,13 @@ const auth = useAuthStore()
 const { isDark, toggle } = useTheme()
 
 const open = ref(false)
+const passwordModalOpen = ref(false)
 const menuRef = ref<HTMLElement | null>(null)
+
+function openPasswordModal() {
+  open.value = false
+  passwordModalOpen.value = true
+}
 
 useClickOutside(menuRef, () => {
   open.value = false
@@ -62,6 +69,13 @@ useClickOutside(menuRef, () => {
           </span>
         </button>
 
+        <button type="button" class="dropdown-item" @click="openPasswordModal">
+          <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+            <path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" />
+          </svg>
+          Change password
+        </button>
+
         <div class="my-1 h-px bg-border" />
 
         <button
@@ -77,5 +91,8 @@ useClickOutside(menuRef, () => {
         </button>
       </div>
     </Transition>
+
+    <!-- Lives here so every layout (Admin/Caregiver/Client) gets it without its own route. -->
+    <ChangePasswordModal v-model="passwordModalOpen" />
   </div>
 </template>

@@ -8,6 +8,7 @@ export const ADMIN_NAV: NavLink[] = [
   { label: 'Visits', to: '/admin/visits', icon: 'visits' },
   { label: 'Care Tasks', to: '/admin/care-tasks', icon: 'careTasks' },
   { label: 'Reports', to: '/admin/reports', icon: 'reports' },
+  { label: 'Users', to: '/admin/users', icon: 'users' },
 ]
 
 export const CAREGIVER_NAV: NavLink[] = [
