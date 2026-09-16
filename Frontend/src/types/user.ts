@@ -1,17 +1,32 @@
 import type { UserRole } from './enums'
 
 /**
- * There is no UsersController/UserDto exposed anywhere in the API (confirmed while building the
- * Caregiver/Client CRUD — GetCaregivers/GetClients return their own profile DTOs, never a raw
- * User). This models the underlying CareConnect.Infrastructure.Entities.User shape as CareConnect
- * DTOs reference it (LoginResponseDto's UserId/FullName/Email/Role, CaregiverDto/ClientDto's
- * userId) — useful for typing that concept consistently, even with no direct "get a User" call.
+ * Mirrors CareConnect.DTOs.Users.UserDto — the account rows the Admin user-management screen lists.
+ *
+ * `caregiverId`/`clientId` say whether the account actually has the profile its role implies. A
+ * user can hold Role=Caregiver with no caregiver profile, because the backend requires the role to
+ * be set *before* that profile can be created.
  */
 export interface User {
   id: number
-  fullName: string
   email: string
+  fullName: string
   phoneNumber: string | null
   role: UserRole
   isActive: boolean
+  /** Whether a password is set at all — never the hash, which the API does not expose. */
+  hasPassword: boolean
+  caregiverId: number | null
+  clientId: number | null
+  createdAtUtc: string
+}
+
+/** Mirrors CareConnect.DTOs.Users.UpdateUserRoleDto. */
+export interface UpdateUserRolePayload {
+  role: UserRole
+}
+
+/** Mirrors CareConnect.DTOs.Users.ResetUserPasswordDto — an Admin setting someone else's password. */
+export interface ResetUserPasswordPayload {
+  newPassword: string
 }

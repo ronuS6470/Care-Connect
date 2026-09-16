@@ -7,6 +7,7 @@ using CareConnect.AppServices.Clients;
 using CareConnect.AppServices.Dashboards;
 using CareConnect.AppServices.Reporting;
 using CareConnect.AppServices.Security;
+using CareConnect.AppServices.Users;
 using CareConnect.AppServices.Visits;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -21,6 +22,7 @@ public static class AppServicesServiceCollectionExtensions
         services.AddScoped<ICurrentUserAccessor, CurrentUserAccessor>();
 
         services.AddScoped<IAuthAppService, AuthAppService>();
+        services.AddScoped<IUsersAppService, UsersAppService>();
         services.AddScoped<ICareTasksAppService, CareTasksAppService>();
         services.AddScoped<ICaregiverAvailabilityAppService, CaregiverAvailabilityAppService>();
         services.AddScoped<IClientsAppService, ClientsAppService>();

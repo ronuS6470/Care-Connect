@@ -427,7 +427,8 @@ All routes are under `/api`. Everything except `POST /api/auth/login` requires a
 
 | Controller | Route | Notes |
 |---|---|---|
-| `AuthController` | `/api/auth` | `login`. Anonymous |
+| `AuthController` | `/api/auth` | `login` (anonymous); `change-password` (any signed-in user, own password only) |
+| `UsersController` | `/api/users` | Admin-only account management: list, change role, activate/deactivate, reset password |
 | `CaregiversController` | `/api/caregivers` | CRUD, activate/deactivate |
 | `CaregiverAvailabilityController` | `/api/caregiver-availability` | Weekly windows |
 | `ClientsController` | `/api/clients` | CRUD. Supports `search` |

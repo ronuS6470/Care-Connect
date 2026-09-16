@@ -30,4 +30,16 @@ public sealed class AuthController : ControllerBase
         var result = await _authAppService.LoginAsync(dto, cancellationToken);
         return Ok(result);
     }
+
+    /// <summary>
+    /// Changes the signed-in caller's own password; any role may call it. A wrong current password
+    /// comes back as a 400 with a field-level error, not a 401 — the session itself is still valid.
+    /// </summary>
+    [HttpPost("change-password")]
+    [Authorize]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto dto, CancellationToken cancellationToken)
+    {
+        await _authAppService.ChangePasswordAsync(dto, cancellationToken);
+        return NoContent();
+    }
 }

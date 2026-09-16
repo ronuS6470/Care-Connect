@@ -154,6 +154,12 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/admin/ReportsPage.vue'),
         meta: { title: 'Reports', breadcrumb: [{ label: 'Reports' }] },
       },
+      {
+        path: 'users',
+        name: 'admin-users',
+        component: () => import('@/pages/admin/users/UsersPage.vue'),
+        meta: { title: 'Users', breadcrumb: [{ label: 'Users' }] },
+      },
     ],
   },
 
